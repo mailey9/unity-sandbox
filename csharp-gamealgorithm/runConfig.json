@@ -1,0 +1,14 @@
+{
+    "NUMBER_OF_GENERATE": 10,
+    
+    "SIZE_ROW": 80,
+    "SIZE_COL": 50,
+
+    "DIVIDE_LEVEL": 4,
+
+    "DIVIDE_RATIO_MIN": 0.35,
+    "DIVIDE_RATIO_MAX": 0.45,
+
+    "ROOMRECT_FILL_RATIO_MIN": 0.75,
+    "ROOMRECT_FILL_RATIO_MAX": 0.95
+}
