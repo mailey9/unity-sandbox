@@ -5,26 +5,56 @@ namespace minorlife
 {
     public class MapGenerator
     {
-        static public List<RoomRect> Generate(MapGenerateConfig generateConfig)
+        static public List<Room> Generate(MapGenerateConfig config)
         {
-            List<RoomRect> roomRectsBinaryTree = CreateDividedRooms(generateConfig.Height,
-                                                                    generateConfig.Width,
-                                                                    generateConfig.DivideRatio_Min,
-                                                                    generateConfig.DivideRatio_Max,
-                                                                    generateConfig.DivideLevel);
-
-            //NOTE(용택): 최대 레벨의 노드들만 채워주면 된다. (ex: 레벨 4 * 바이너리 노드 = 방 8개 = 8~15번 노드)
-            int roomNodeIndexStart = (int)Math.Pow(2.0, generateConfig.DivideLevel - 1);
-            int roomNodeIndexEnd   = (int)Math.Pow(2.0, generateConfig.DivideLevel);
-            for (int roomNodeIndex = roomNodeIndexStart; roomNodeIndex < roomNodeIndexEnd; ++roomNodeIndex)
-            {
-                roomRectsBinaryTree[roomNodeIndex] = FillRoom(roomRectsBinaryTree[roomNodeIndex],
-                                                              generateConfig.RoomRect_FillRatio_Min,
-                                                              generateConfig.RoomRect_FillRatio_Max);
-            }
+            List<RoomRect> roomRectsBinaryTree = CreateDividedRooms(config.Height,
+                                                                    config.Width,
+                                                                    config.DivideRatioMin,
+                                                                    config.DivideRatioMax,
+                                                                    config.DivideLevel);
 
             //NOTE(용택): 최대 레벨의 노드 외에는 실제 맵 적용에 필요없다.
-            return roomRectsBinaryTree.GetRange(roomNodeIndexStart, roomNodeIndexStart);
+            int leafNodeIndexStart = (int)Math.Pow(2.0, config.DivideLevel - 1);
+            int numberOfLeafNodes  = leafNodeIndexStart;
+
+            List<RoomRect> leaves = roomRectsBinaryTree.GetRange(leafNodeIndexStart, numberOfLeafNodes);
+            List<Room> rooms = new List<Room>(leaves.Count);
+            for (int i = 0; i < numberOfLeafNodes; ++i)
+            {
+                //TODO(용택): leaf 노드의 크기가 일정 이하면 Discard
+                if (leaves[i].row < config.DiscardLessThanHeight * config.RoomRectFillRatioMax ||
+                    leaves[i].col < config.DiscardLessThanWidth * config.RoomRectFillRatioMax)
+                {
+                    continue;
+                }
+
+                rooms.Add(new Room(config.RoomRectFillCount));
+
+                int fillCount = 0;
+                while (fillCount < config.RoomRectFillCount)
+                {
+                    RoomRect filled = FillRoom(leaves[i], config.RoomRectFillRatioMin, config.RoomRectFillRatioMax);
+
+                    if (filled.row < config.DiscardLessThanHeight || filled.col < config.DiscardLessThanWidth)
+                    {
+                        continue;
+                    }
+
+                    if (fillCount > 0)//rooms[i].RectCount > 0
+                    {
+                        if (rooms[rooms.Count-1].HasIntersection(filled) == false)
+                        {
+                            continue;
+                        }
+                    }
+                    rooms[rooms.Count-1].Append(filled);
+                    fillCount += 1;
+                }
+
+                //TODO(용택): Connectivity 가 보장되지 않으면 Discard.
+            }
+
+            return rooms;
         }
 
         static private RoomRect FillRoom(RoomRect roomRect, float minRatio, float maxRatio)

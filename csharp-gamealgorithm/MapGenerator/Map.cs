@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using System.Collections.Generic;
 
 namespace minorlife
@@ -25,20 +26,25 @@ namespace minorlife
             _map = array2d;
         }
 
-        public bool Apply(List<RoomRect> roomRects)
+        public bool Apply(List<Room> rooms)
         {
-            foreach(RoomRect roomRect in roomRects)
+            foreach(Room room in rooms)
             {
-                if (roomRect.Validate(this) == false)
+                for (int i = 0; i < room.RectCount; ++i)
                 {
-                    return false;
-                }
+                    RoomRect roomRect = room.GetRect(i);
 
-                for (int r = roomRect.row; r < roomRect.row + roomRect.height; ++r)
-                {
-                    for (int c = roomRect.col; c < roomRect.col + roomRect.width; ++c)
+                    if (roomRect.Validate(this) == false)
                     {
-                        _map[r][c] = 1;
+                        return false;
+                    }
+
+                    for (int r = roomRect.row; r < roomRect.row + roomRect.height; ++r)
+                    {
+                        for (int c = roomRect.col; c < roomRect.col + roomRect.width; ++c)
+                        {
+                            _map[r][c] = 1;
+                        }
                     }
                 }
             }
@@ -48,16 +54,25 @@ namespace minorlife
 
         public override string ToString()
         {
-            string ret = "";
-            foreach(List<int> rows in _map)
+            int capa = _map.Count;
+            foreach(var rows in _map)
+            {
+                capa += rows.Count;
+            }
+            capa *= 2;
+            capa += _map.Count;
+
+            StringBuilder stringBuilder = new StringBuilder(capa);
+            foreach(var rows in _map)
             {
                 foreach(int i in rows)
                 {
-                    ret += ( i==0 ? ". " : "# " );
+                    stringBuilder.Append( i==0 ? ". " : "# " );
                 }
-                ret += "\n";
+                stringBuilder.Append( "\n" );
             }
-            return ret;
+
+            return stringBuilder.ToString();
         }
     }
 }

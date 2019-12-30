@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 
@@ -11,14 +10,17 @@ namespace minorlife
         {
             string runPath = AppDomain.CurrentDomain.BaseDirectory;
 
-            MapGenerateConfig mapGenConfig = new MapGenerateConfig();
-            mapGenConfig.Width = 120;
-            mapGenConfig.Height = 80;
-            mapGenConfig.DivideLevel = 6;
-            mapGenConfig.DivideRatio_Min = 0.15f;
-            mapGenConfig.DivideRatio_Max = 0.45f;
-            mapGenConfig.RoomRect_FillRatio_Min = 0.30f;
-            mapGenConfig.RoomRect_FillRatio_Max = 0.80f;
+            MapGenerateConfig mapGenConfig = MapGenerateConfig.DEFAULT;//new MapGenerateConfig();
+            mapGenConfig.Width = 250;
+            mapGenConfig.Height = 250;
+            mapGenConfig.DivideLevel = 7;
+            mapGenConfig.DivideRatioMin = 0.35f;
+            mapGenConfig.DivideRatioMax = 0.50f;
+            mapGenConfig.RoomRectFillRatioMin = 0.25f;
+            mapGenConfig.RoomRectFillRatioMax = 0.70f;
+            mapGenConfig.RoomRectFillCount = 3;
+            mapGenConfig.DiscardLessThanWidth = 5;
+            mapGenConfig.DiscardLessThanHeight = 5;
 
             Stopwatch sw_genOnly = new Stopwatch();
             Stopwatch sw = new Stopwatch();
@@ -34,7 +36,7 @@ namespace minorlife
                 sw_genOnly.Stop();
 
                 string filename = runPath + "RandGenMap_" + mapGenConfig.Width + "x" + mapGenConfig.Height + "_Level" + mapGenConfig.DivideLevel + "_" + i + ".txt";
-                File.WriteAllText(@filename, randomMap.ToString());
+                File.WriteAllText(@filename, mapGenConfig.ToString() + "\n" + randomMap.ToString());
             }
 
             sw.Stop();
