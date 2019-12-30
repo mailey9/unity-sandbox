@@ -9,7 +9,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/csharp-gamealgorithm/bin/Debug/netcoreapp3.1/csharp-gamealgorithm.dll",
+            "program": "${workspaceFolder}/csharp-gamealgorithm/bin/Debug/netcoreapp2.0/csharp-gamealgorithm.dll",
             "args": [],
             "cwd": "${workspaceFolder}/csharp-gamealgorithm",
             "console": "internalConsole",
