@@ -9,7 +9,9 @@ namespace minorlife
         public int Width  { get{ return _map[0].Count; } }
         public int Height { get{ return _map.Count; } }
 
-        private List< List<int> >   _map;
+        private List<List<int>>   _map    = null;   //TODO(용택): 이걸 층(Floor)별로 다시 2d array 를 보관하는 걸 생각해본다. arr[level][y][x]; --int 는 struct Tile{} 로 대체.
+        private List<List<Room>>  _floors = null;   //TODO(용택): 상동, 필요없을 수 있다.
+        private List<List<Path>>  _paths  = null;   //TODO(용택): 상동, 필요없을 수 있다.
 
         public Map(int width, int height)//Create2dArray(int row, int col)
         {

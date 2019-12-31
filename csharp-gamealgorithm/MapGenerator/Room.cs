@@ -8,7 +8,7 @@ namespace minorlife
 
     public class Room
     {
-        #region Properties: Min/Max of RoomRect
+        #region Properties: Coord Utilities
         public int MinRow
         {
             get
@@ -69,15 +69,27 @@ namespace minorlife
                 return rect;
             }
         }
-        #endregion
-        #region Properties
-        public int RectCount { get { return _roomRects.Count; } }
-        #endregion
 
+        public RoomCoord RectFilterCentroid
+        {
+            get
+            {
+                RoomRect rectFilter = RectFilter;
+                RoomCoord centroid = (rectFilter.BottomRight - rectFilter.TopLeft) * 0.5f;
+                return centroid;
+            }
+        }
+        #endregion
+        
+        public int RectCount { get { return _roomRects.Count; } }
+        public int Id { get; private set; }
+        
+        private static int _id = 0;
         private List<RoomRect> _roomRects = null;
 
-        public Room(int capacity)
+        public Room(int capacity=0)
         {
+            Id = _id++;
             _roomRects = new List<RoomRect>(capacity);
         }
 
@@ -145,5 +157,61 @@ namespace minorlife
         {
             return a.HasIntersection(b);
         }
+
+        public float GetEuclidDistanceSq(Room other)
+        {
+            RoomCoord diffCentroid = RectFilterCentroid - other.RectFilterCentroid;
+            return MathF.Pow(diffCentroid.row, 2.0f) + MathF.Pow(diffCentroid.col, 2.0f);
+        }
+        public static float GetEuclidDistanceSq(Room a, Room b)
+        {
+            return a.GetEuclidDistanceSq(b);
+        }
+
+        public static Room FindRoom(int id, List<Room> rooms)
+        {
+            //NOTE(용택): O(n) 으로 리스트에서 ID 를 찾아본다.
+            Room found = null;
+            foreach (Room room in rooms)
+            {
+                if (room.Id == id)
+                {
+                    found = room;
+                    break;
+                }
+            }
+            return found;
+        }
+
+        public static SortedDictionary<float, int> GetEuclidDistanceIdPairs(Room comparison, List<Room> roomsCompareTo)
+        {
+            //NOTE(용택): 대상 comparison 에 대한 <거리,ID> pair 를 리턴.
+            bool containsRoomComparer = false;
+            
+            SortedDictionary<float, int> distanceIdPairs = new SortedDictionary<float, int>();
+            foreach (Room room in roomsCompareTo)
+            {
+                if (room.Id == comparison.Id)
+                {
+                    containsRoomComparer = true;
+                    continue;
+                }
+
+                float roughEuclidDistanceSq = comparison.GetEuclidDistanceSq(room);
+                distanceIdPairs.Add(roughEuclidDistanceSq, room.Id);
+            }
+            
+            if( containsRoomComparer == false ) return null;//NOTE(용택): 에러, 사용이 잘못되었다. roomsCompareTo 에 comparison 가 포함되어있지 않다.
+            return distanceIdPairs;
+        }
+
+        public static Comparison<Room> RowMajorComparison = delegate (Room a, Room b)
+        {
+            return a.MinRow.CompareTo(b.MinRow);
+        };
+        public static Comparison<Room> ColumnMajorComparison = delegate (Room a, Room b)
+        {
+            return a.MinCol.CompareTo(b.MinCol);
+        };
     }   
 }
