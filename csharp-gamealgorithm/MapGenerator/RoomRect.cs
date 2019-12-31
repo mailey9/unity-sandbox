@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace minorlife
 {
     public struct RoomRect
@@ -38,6 +40,27 @@ namespace minorlife
             }
 
             return true;
+        }
+
+        public HashSet<int> GetColumns(int row)
+        {
+            var columns = new HashSet<int>(width);
+            if (MinRow <= row && row <= MaxRow)
+            {
+                for (int r = MinCol; r <= MaxCol; ++r)
+                    columns.Add(r);
+            }
+            return columns;
+        }
+        public HashSet<int> GetRows(int column)
+        {
+            var rows = new HashSet<int>(height);
+            if (MinCol <= column && column <= MaxCol)
+            {
+                for (int r = MinRow; r <= MaxRow; ++r)
+                    rows.Add(r);
+            }
+            return rows;
         }
 
         public static bool Contains(RoomRect roomRect, RoomCoord roomCoord)

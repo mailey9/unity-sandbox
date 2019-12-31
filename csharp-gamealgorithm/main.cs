@@ -11,14 +11,14 @@ namespace minorlife
             string runPath = AppDomain.CurrentDomain.BaseDirectory;
 
             MapGenerateConfig mapGenConfig = MapGenerateConfig.DEFAULT;//new MapGenerateConfig();
-            mapGenConfig.Width = 250;
+            mapGenConfig.Width = 300;
             mapGenConfig.Height = 250;
             mapGenConfig.DivideLevel = 7;
             mapGenConfig.DivideRatioMin = 0.35f;
-            mapGenConfig.DivideRatioMax = 0.50f;
+            mapGenConfig.DivideRatioMax = 0.45f;
             mapGenConfig.RoomRectFillRatioMin = 0.25f;
             mapGenConfig.RoomRectFillRatioMax = 0.70f;
-            mapGenConfig.RoomRectFillCount = 3;
+            mapGenConfig.RoomRectFillCount = 4;
             mapGenConfig.DiscardLessThanWidth = 5;
             mapGenConfig.DiscardLessThanHeight = 5;
 
@@ -26,7 +26,7 @@ namespace minorlife
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            int runCount = 1;
+            int runCount = 10;
             for (int i = 0; i < runCount; ++i)
             {
                 sw_genOnly.Start();

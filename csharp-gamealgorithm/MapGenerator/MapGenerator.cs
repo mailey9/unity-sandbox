@@ -5,6 +5,7 @@ namespace minorlife
 {
     public class MapGenerator
     {
+        static int DEBUG_generateRunCount = 0;
         static public List<Room> Generate(MapGenerateConfig config)
         {
             List<RoomRect> roomRectsBinaryTree = CreateDividedRoomRectBinaryTree(config.Height,
@@ -22,7 +23,17 @@ namespace minorlife
                                            config.DiscardLessThanHeight);
 
             //GetDistanceSortedRoomIds(3, rooms);
+
+            int bef = rooms.Count;
             MergeConnectiveRooms(rooms);
+            int aft = rooms.Count;
+
+            Console.Write("before/after: " + bef + " / " + aft);
+            if (bef != aft)
+            {
+                Console.Write("<------------------ " + DEBUG_generateRunCount);
+            }
+            Console.Write("\n");
 
             //int entranceRoomId = SelectEntranceRoom(rooms);
             //int exitRoomId     = SelectExitRoom(rooms, entranceRoomId); //NOTE(용택): 입구에 대한 의존성이 있으니 직접넘긴다.
@@ -32,6 +43,7 @@ namespace minorlife
             //          Consecutive 여부를 판단할 때, BT Sibling 이면 Consecutive 다.
             //          그냥 거리로 하는 게 낫겠다.
 
+            DEBUG_generateRunCount += 1;
             return rooms;
         }
 
@@ -142,8 +154,9 @@ namespace minorlife
             int maxRow = roomRect.row + (roomRect.height - randomHeight);
             int maxCol = roomRect.col + (roomRect.width - randomWidth);
 
-            filled.row = random.Next(roomRect.row, maxRow);
-            filled.col = random.Next(roomRect.col, maxCol);
+            //NOTE(용택): random.Next(int min-include,int max-exclude); 이다.
+            filled.row = random.Next(roomRect.row, maxRow + 1);
+            filled.col = random.Next(roomRect.col, maxCol + 1);
 
             return filled;
         }
@@ -158,8 +171,8 @@ namespace minorlife
 
             for (int i = 0; i < numberOfLeafNodes; ++i)
             {
-                if (leaves[i].row < discardHeight * maxFillRatio ||
-                    leaves[i].col < discardWidth * maxFillRatio)
+                if (leaves[i].height * maxFillRatio < discardHeight ||
+                    leaves[i].width * maxFillRatio < discardWidth)
                 {
                     continue;
                 }
@@ -171,7 +184,7 @@ namespace minorlife
                 {
                     RoomRect filled = FillRoomRect(leaves[i], minFillRatio, maxFillRatio);
 
-                    if (filled.row < discardHeight || filled.col < discardWidth)
+                    if (filled.height < discardHeight || filled.width < discardWidth)
                     {
                         continue;
                     }
@@ -196,28 +209,24 @@ namespace minorlife
 
         static private void MergeConnectiveRooms(List<Room> rooms)
         {
-            //TODO(용택): 인접하고 통로가 이미 있는 방의 경우는 Merge
-            
-            //NOTE(용택): 최대 5개(타겟+4방향)이 머지가 가능할 수 있다. 최소는 0 (=없음)
-            //          머지 가능 여부는 세로방향을 예로 row의 min/max 를 조사, 차이가 1이면 가능하다.
-            //          이건 필터조건이고, 실계산은 위 조건을 만족시 col[] 을 조사해야한다.
-            //          RowMajor Sort, ColumnMajor Sort 를 통해 어느정도 속도업을 노릴 수 있다. (n^2, n^4 를 피할 수 있다.)
-            //          이미 필터조건에서 걸러지기 때문에 naive implementation 도 나쁘지는 않을 것 같다.
+            //TODO(용택): 오버헤드가 큰 지 측정 필요.
+            for (int a = 0; a < rooms.Count; ++a)
+            {
+                int b = 0;
+                while (b < rooms.Count)
+                {
+                    if (rooms.Count == 1) break;
+                    if (a == b || Room.canMerge(rooms[a], rooms[b]) == false)
+                    {
+                        b += 1;
+                        continue;
+                    }
+
+                    rooms[a].Append(rooms[b]);
+                    rooms.Remove(rooms[b]);
+                }
+            }
             //NOTE(용택): 그래프 연결 작업은 이 이후에 되어야 한다.
-
-            Console.Write("\nRows: ");
-            rooms.Sort(Room.RowMajorComparison);
-            foreach(Room room in rooms)
-            {
-                Console.Write( room.MinRow + " ");
-            }
-
-            Console.Write("\nColumns: ");
-            rooms.Sort(Room.ColumnMajorComparison);
-            foreach(Room room in rooms)
-            {
-                Console.Write( room.MinCol + " ");
-            }
         }
         static private List<int> GetDistanceSortedRoomIds(int targetRoomId, List<Room> rooms)
         {
