@@ -12,9 +12,9 @@ namespace minorlife
         public float DivideRatioMin { get; set; }
         public float DivideRatioMax { get; set; }
 
-        public int RoomRectFillCount { get; set; }
-        public float RoomRectFillRatioMin { get; set; }
-        public float RoomRectFillRatioMax { get; set; }
+        public int RectFillCount { get; set; }
+        public float RectFillRatioMin { get; set; }
+        public float RectFillRatioMax { get; set; }
 
         public int DiscardLessThanWidth { get; set; }
         public int DiscardLessThanHeight { get; set; }
@@ -29,9 +29,9 @@ namespace minorlife
                 defaultConfig.DivideLevel = 4;
                 defaultConfig.DivideRatioMin = 0.25f;
                 defaultConfig.DivideRatioMax = 0.45f;
-                defaultConfig.RoomRectFillCount = 1;
-                defaultConfig.RoomRectFillRatioMin = 0.45f;
-                defaultConfig.RoomRectFillRatioMax = 0.80f;
+                defaultConfig.RectFillCount = 1;
+                defaultConfig.RectFillRatioMin = 0.45f;
+                defaultConfig.RectFillRatioMax = 0.80f;
                 defaultConfig.DiscardLessThanWidth = 1;
                 defaultConfig.DiscardLessThanHeight = 1;
 
@@ -49,9 +49,9 @@ namespace minorlife
             stringBuilder.Append("Divide Level: " + DivideLevel + "\n");
             stringBuilder.Append("Divide Ratio Min: " + DivideRatioMin + "\n");
             stringBuilder.Append("Divide Ratio Max: " + DivideRatioMax + "\n");
-            stringBuilder.Append("RoomRect Fill Count: " + RoomRectFillCount + "\n");
-            stringBuilder.Append("RoomRect Fill Ratio Min: " + RoomRectFillRatioMin + "\n");
-            stringBuilder.Append("RoomRect Fill Ratio Max: " + RoomRectFillRatioMax + "\n");
+            stringBuilder.Append("Rect Fill Count: " + RectFillCount + "\n");
+            stringBuilder.Append("Rect Fill Ratio Min: " + RectFillRatioMin + "\n");
+            stringBuilder.Append("Rect Fill Ratio Max: " + RectFillRatioMax + "\n");
             stringBuilder.Append("Discard Less Than Width: " + DiscardLessThanWidth + "\n");
             stringBuilder.Append("Discard Less Than Height: " + DiscardLessThanHeight + "\n");
 

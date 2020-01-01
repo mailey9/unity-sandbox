@@ -14,9 +14,9 @@ namespace minorlife
             get
             {
                 int minRow = int.MaxValue;
-                foreach(var roomRect in _roomRects)
+                foreach(var rect in _rects)
                 {
-                    minRow = Math.Min(minRow, roomRect.MinRow);
+                    minRow = Math.Min(minRow, rect.MinRow);
                 }
                 return minRow;
             }
@@ -26,9 +26,9 @@ namespace minorlife
             get
             {
                 int maxRow = int.MinValue;
-                foreach(var roomRect in _roomRects)
+                foreach(var rect in _rects)
                 {
-                    maxRow = Math.Max(maxRow, roomRect.MaxRow);
+                    maxRow = Math.Max(maxRow, rect.MaxRow);
                 }
                 return maxRow;
             }
@@ -38,9 +38,9 @@ namespace minorlife
             get
             {
                 int minCol = int.MaxValue;
-                foreach(var roomRect in _roomRects)
+                foreach(var rect in _rects)
                 {
-                    minCol = Math.Min(minCol, roomRect.MinCol);
+                    minCol = Math.Min(minCol, rect.MinCol);
                 }
                 return minCol;
             }
@@ -50,14 +50,14 @@ namespace minorlife
             get
             {
                 int maxCol = int.MinValue;
-                foreach(var roomRect in _roomRects)
+                foreach(var rect in _rects)
                 {
-                    maxCol = Math.Max(maxCol, roomRect.MaxCol);
+                    maxCol = Math.Max(maxCol, rect.MaxCol);
                 }
                 return maxCol;
             }
         }
-        public RoomRect RectFilter
+        public Rect RectFilter
         {
             //NOTE(용택): Room의 대략적인 Rect만 반환한다.
             //      RRRRRR          FFFFFFFFFFF
@@ -66,7 +66,7 @@ namespace minorlife
             //         RRRRRRRR     FFFFFFFFFFF //이런느낌
             get
             {
-                RoomRect rect;
+                Rect rect;
                 rect.row = MinRow;
                 rect.col = MinCol;
                 rect.width = MaxCol + 1;
@@ -75,32 +75,34 @@ namespace minorlife
             }
         }
 
-        public RoomCoord RectFilterCentroid
+        public Coord RectFilterCentroid
         {
             get
             {
-                RoomRect rectFilter = RectFilter;
-                RoomCoord centroid = (rectFilter.BottomRight - rectFilter.TopLeft) * 0.5f;
+                Rect rectFilter = RectFilter;
+                Coord centroid = (rectFilter.BottomRight - rectFilter.TopLeft) * 0.5f;
                 return centroid;
             }
         }
         #endregion
         
-        public int RectCount { get { return _roomRects.Count; } }
+        public int RectCount { get { return _rects.Count; } }
         public int Id { get; private set; }
         
         private static int _id = 0;
-        private List<RoomRect> _roomRects = null;
+        private List<Rect> _rects = null;
 
         public Room(int capacity=0)
         {
             Id = _id++;
-            _roomRects = new List<RoomRect>(capacity);
+            _rects = new List<Rect>(capacity);
         }
         public static Room FindRoom(int id, List<Room> rooms)
         {
             //NOTE(용택): O(n) 으로 리스트에서 ID 를 찾아본다.
             //TODO(용택): Id 로 Sort 해두고, BinSearch 로 찾을 수 있도록 한다.
+            //  rooms.Sort(IdComparison);
+            //  rooms.BinarySearch(/*IComparer<T>*/);
             Room found = null;
             foreach (Room room in rooms)
             {
@@ -112,33 +114,32 @@ namespace minorlife
             }
             return found;
         }
-        public void Append(RoomRect roomRect)
+        public void Append(Rect rect)
         {
-            _roomRects.Add(roomRect);
+            _rects.Add(rect);
         }
 
         public void Append(Room room)
         {
-            //TODO(용택): 찾아보고 고려, Enumerable 인터페이스가 필요한 듯.. foreach 등에도..
-            //_roomRects.AddRange(room);
-
             for (int i = 0; i < room.RectCount; ++i)
             {
-                _roomRects.Add(room._roomRects[i]);
+                _rects.Add(room._rects[i]);
             }
         }
-        public RoomRect GetRect(int index)
+        public Rect GetRect(int index)
         {
-            return _roomRects[index];
+            return _rects[index];
         }
 
         public int[] GetColumns(int row)
         {
             var columnSet = new HashSet<int>(MaxCol - MinCol + 1);
 
-            foreach(RoomRect rect in _roomRects)
+            foreach(Rect rect in _rects)
             {
-                columnSet.UnionWith(rect.GetColumns(row));
+                int[] resultColumns = rect.GetColumns(row);
+                if (resultColumns != null)
+                    columnSet.UnionWith(resultColumns);
             }
             
             int[] columns = new int[columnSet.Count];
@@ -149,9 +150,11 @@ namespace minorlife
         {
             var rowSet = new HashSet<int>(MaxRow - MinRow + 1);
 
-            foreach(RoomRect rect in _roomRects)
+            foreach(Rect rect in _rects)
             {
-                rowSet.UnionWith(rect.GetRows(column));
+                int[] resultRows = rect.GetRows(column);
+                if (resultRows != null)
+                    rowSet.UnionWith(resultRows);
             }
 
             int[] rows = new int[rowSet.Count];
@@ -159,12 +162,13 @@ namespace minorlife
             return rows;
         }
 
-        public RoomCoord[] GetTopCoords()
+        public Coord[] GetTopCoords()
         {
+            //TODO(용택): HashSet 에 모든 Rect 의 Top 을 적재한 뒤 반환
             int minRow = MinRow;
             int[] topColumns = GetColumns(minRow);
 
-            RoomCoord[] topCoords = new RoomCoord[topColumns.Length];
+            Coord[] topCoords = new Coord[topColumns.Length];
             for(int i = 0; i < topCoords.Length; ++i)
             {
                 topCoords[i].row = minRow;
@@ -172,12 +176,13 @@ namespace minorlife
             }
             return topCoords;
         }
-        public RoomCoord[] GetBottomCoords()
+        public Coord[] GetBottomCoords()
         {
+            //TODO(용택): HashSet 에 모든 Rect 의 Bottom 을 적재한 뒤 반환
             int maxRow = MaxRow;
             int[] bottomColumns = GetColumns(maxRow);
 
-            RoomCoord[] bottomCoords = new RoomCoord[bottomColumns.Length];
+            Coord[] bottomCoords = new Coord[bottomColumns.Length];
             for (int i = 0; i < bottomCoords.Length; ++i)
             {
                 bottomCoords[i].row = maxRow;
@@ -185,12 +190,13 @@ namespace minorlife
             }
             return bottomCoords;
         }
-        public RoomCoord[] GetLeftCoords()
+        public Coord[] GetLeftCoords()
         {
+            //TODO(용택): HashSet 에 모든 Rect 의 Left 를 적재한 뒤 반환
             int minCol = MinCol;
             int[] leftRows = GetRows(minCol);
 
-            RoomCoord[] leftCoords = new RoomCoord[leftRows.Length];
+            Coord[] leftCoords = new Coord[leftRows.Length];
             for (int i = 0; i < leftCoords.Length; ++i)
             {
                 leftCoords[i].row = leftRows[i];
@@ -198,12 +204,13 @@ namespace minorlife
             }
             return leftCoords;
         }
-        public RoomCoord[] GetRightCoords()
+        public Coord[] GetRightCoords()
         {
+            //TODO(용택): HashSet 에 모든 Rect 의 Right 를 적재한 뒤 반환
             int maxCol = MaxCol;
             int[] rightRows = GetRows(maxCol);
 
-            RoomCoord[] rightCoords = new RoomCoord[rightRows.Length];
+            Coord[] rightCoords = new Coord[rightRows.Length];
             for (int i = 0; i < rightCoords.Length; ++i)
             {
                 rightCoords[i].row = rightRows[i];
@@ -212,24 +219,24 @@ namespace minorlife
             return rightCoords;
         }
 
-        public bool Contains(RoomCoord roomCoord)
+        public bool Contains(int r, int c)
         {
-            foreach(var roomRect in _roomRects)
+            foreach(var rect in _rects)
             {
-                if (roomRect.Contains(roomCoord) == true)
+                if (rect.Contains(r,c) == true)
                     return true;
             }
-
             return false;
         }
-        public bool HasIntersection(RoomRect otherRect)
+
+        public bool HasIntersection(Rect otherRect)
         {
             if (RectFilter.HasIntersection(otherRect) == false)
             {
                 return false;
             }
             
-            foreach (var room in _roomRects)
+            foreach (var room in _rects)
             {
                 if (room.HasIntersection(otherRect) == true)
                 {
@@ -247,9 +254,9 @@ namespace minorlife
                 return false;
             }
 
-            foreach (var thisRoom in _roomRects)
+            foreach (var thisRoom in _rects)
             {
-                foreach (var otherRoom in other._roomRects)
+                foreach (var otherRoom in other._rects)
                 {
                     if (thisRoom.HasIntersection(otherRoom) == true)
                     {
@@ -267,7 +274,7 @@ namespace minorlife
         }
         public float GetEuclidDistanceSq(Room other)
         {
-            RoomCoord diffCentroid = RectFilterCentroid - other.RectFilterCentroid;
+            Coord diffCentroid = RectFilterCentroid - other.RectFilterCentroid;
             return MathF.Pow(diffCentroid.row, 2.0f) + MathF.Pow(diffCentroid.col, 2.0f);
         }
         public static float GetEuclidDistanceSq(Room a, Room b)
@@ -298,7 +305,7 @@ namespace minorlife
 
         public static bool canMerge(Room a, Room b)
         {
-            RoomRect filter = a.RectFilter;
+            Rect filter = a.RectFilter;
             filter.row = (filter.row == 0) ? filter.row : filter.row - 1;
             filter.col = (filter.col == 0) ? filter.col : filter.col - 1;
             filter.width += 1;
@@ -308,33 +315,34 @@ namespace minorlife
             if (filter.HasIntersection(b.RectFilter) == false)
                 return false;
 
+            //NOTE(용택): 한 칸을 키운 좌표들과 대상이 교차하는지 살펴본다. 4방향 전수좌표를 검사한다.
             //TODO(용택): 오버헤드가 큰 지 측정 필요.
-            RoomCoord[] aTop = a.GetTopCoords();
-            for(int i = 0; i < aTop.Length; ++i)
+            int   topRow     = (a.MinRow == 0) ? a.MinRow : a.MinRow - 1;
+            int[] topColumns = a.GetColumns(a.MinRow);
+            for(int i = 0; i < topColumns.Length; ++i)
             {
-                aTop[i].row = (aTop[i].row == 0) ? aTop[i].row : aTop[i].row - 1;
-                if (b.Contains(aTop[i]) == true) return true;
+                if (b.Contains(topRow, topColumns[i]) == true) return true;
             }
 
-            RoomCoord[] aBottom = a.GetBottomCoords();
-            for(int i = 0; i < aBottom.Length; ++i)
+            int   bottomRow     = a.MaxRow + 1;
+            int[] bottomColumns = a.GetColumns(a.MaxRow);
+            for(int i = 0; i < bottomColumns.Length; ++i)
             {
-                aBottom[i].row += 1;
-                if (b.Contains(aBottom[i]) == true) return true;
+                if (b.Contains(bottomRow, bottomColumns[i]) == true) return true;
             }
 
-            RoomCoord[] aLeft = a.GetLeftCoords();
-            for(int i = 0; i < aLeft.Length; ++i)
+            int   leftColumn = (a.MinCol == 0) ? a.MinCol : a.MinCol - 1;
+            int[] leftRows   = a.GetRows(a.MinCol);
+            for(int i = 0; i < leftRows.Length; ++i)
             {
-                aLeft[i].col = (aLeft[i].col == 0) ? aLeft[i].col : aLeft[i].col - 1;
-                if (b.Contains(aLeft[i]) == true) return true;
+                if (b.Contains(leftRows[i], leftColumn) == true) return true;
             }
 
-            RoomCoord[] aRight = a.GetRightCoords();
-            for(int i = 0; i < aRight.Length; ++i)
+            int   rightColumn = a.MaxCol + 1;
+            int[] rightRows   = a.GetRows(a.MaxCol);
+            for(int i = 0; i < rightRows.Length; ++i)
             {
-                aRight[i].col += 1;
-                if (b.Contains(aRight[i]) == true) return true;
+                if (b.Contains(rightRows[i], rightColumn) == true) return true;
             }
 
             return false;

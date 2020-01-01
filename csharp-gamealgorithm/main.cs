@@ -2,6 +2,8 @@
 using System.Diagnostics;
 using System.IO;
 
+//TODO(용택): Rect , Coord 같은 건 대체 고려
+
 namespace minorlife
 {   
     class Program
@@ -11,14 +13,14 @@ namespace minorlife
             string runPath = AppDomain.CurrentDomain.BaseDirectory;
 
             MapGenerateConfig mapGenConfig = MapGenerateConfig.DEFAULT;//new MapGenerateConfig();
-            mapGenConfig.Width = 300;
-            mapGenConfig.Height = 250;
-            mapGenConfig.DivideLevel = 7;
+            mapGenConfig.Width = 400;
+            mapGenConfig.Height = 300;
+            mapGenConfig.DivideLevel = 6;
             mapGenConfig.DivideRatioMin = 0.35f;
             mapGenConfig.DivideRatioMax = 0.45f;
-            mapGenConfig.RoomRectFillRatioMin = 0.25f;
-            mapGenConfig.RoomRectFillRatioMax = 0.70f;
-            mapGenConfig.RoomRectFillCount = 4;
+            mapGenConfig.RectFillRatioMin = 0.25f;
+            mapGenConfig.RectFillRatioMax = 0.70f;
+            mapGenConfig.RectFillCount = 4;
             mapGenConfig.DiscardLessThanWidth = 5;
             mapGenConfig.DiscardLessThanHeight = 5;
 
@@ -26,7 +28,7 @@ namespace minorlife
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            int runCount = 10;
+            int runCount = 10000;
             for (int i = 0; i < runCount; ++i)
             {
                 sw_genOnly.Start();
