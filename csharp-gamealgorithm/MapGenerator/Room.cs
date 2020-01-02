@@ -143,7 +143,7 @@ namespace minorlife
             }
             
             int[] columns = new int[columnSet.Count];
-            columnSet.CopyTo(columns);
+            columnSet.CopyTo(columns);//NOTE(용택): 코드스멜인가..?
             return columns;
         }
         public int[] GetRows(int column)
@@ -158,7 +158,7 @@ namespace minorlife
             }
 
             int[] rows = new int[rowSet.Count];
-            rowSet.CopyTo(rows);
+            rowSet.CopyTo(rows);//NOTE(용택): 코드스멜인가..?
             return rows;
         }
 
@@ -272,6 +272,16 @@ namespace minorlife
         {
             return a.HasIntersection(b);
         }
+
+        public int CalculateManhattanDistance(Room other)
+        {
+            Coord diff = RectFilterCentroid - other.RectFilterCentroid;
+            return Math.Abs(diff.row) + Math.Abs(diff.col);
+        }
+        public static int CalculateManhattanDistance(Room a, Room b)
+        {
+            return a.CalculateManhattanDistance(b);
+        }
         public float GetEuclidDistanceSq(Room other)
         {
             Coord diffCentroid = RectFilterCentroid - other.RectFilterCentroid;
@@ -281,6 +291,9 @@ namespace minorlife
         {
             return a.GetEuclidDistanceSq(b);
         }
+
+        //TODO(용택): Obsolote 시킨다. Matrix 계산할 때 구할 것이고, Manhattan Distance 를 기본으로 한다.
+        [ObsoleteAttribute()]
         public static SortedDictionary<float, int> GetEuclidDistanceIdPairs(Room comparison, List<Room> roomsCompareTo)
         {
             //NOTE(용택): 대상 comparison 에 대한 <거리,ID> pair 를 리턴.
