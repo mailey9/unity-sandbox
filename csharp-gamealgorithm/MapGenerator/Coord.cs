@@ -1,3 +1,4 @@
+using System;
 //TODO(용택): 이후 Unity Coord 또는 Vec2 대체 고려
 namespace minorlife
 {
@@ -20,6 +21,12 @@ namespace minorlife
             ret.row = (int)(a.row * f);
             ret.col = (int)(a.col * f);
             return ret;
+        }
+
+        public static int CalculateManhattanDistance(Coord a, Coord b)
+        {
+            Coord diff = a - b;
+            return Math.Abs(diff.row) + Math.Abs(diff.col);
         }
     }
 }

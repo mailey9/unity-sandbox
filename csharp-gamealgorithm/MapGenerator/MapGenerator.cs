@@ -20,9 +20,11 @@ namespace minorlife
 {
     public class MapGenerator
     {
+        public static List<Corridor> DEBUG_Corridors = null;
         static int DEBUG_generateRunCount = 0;
         static public List<Room> Generate(MapGenerateConfig config)
         {
+            int[,] array2d = CreateArray2D(config.Width, config.Height);
             //NOTE(용택): Width * Height 로 사각형을 만들고, BSP로 사각형을 분할한다.
             //TODO(용택): 여기서 Map 을 반환할 것이므로, 함수를 좀 더 잘게 나눈다., 스택 용량은 생각하지 않는다.
             List<Rect> rectsBinaryTree = CreateDividedRectBinaryTree(config.Height,
@@ -52,68 +54,142 @@ namespace minorlife
             //NOTE(용택): 후에 BinSearch 에 용이하도록 ID로 정렬해 둔다.
             //NOTE(용택): 사실 id 부여방식이 0부터 ++ 기 때문에 오름차순이 되긴해서 굳이 필요없긴 하다.
             rooms.Sort(Room.IdComparison);
+            //TODO(용택): 다음 구현은 함수로 뺀다. int[,] ApplyRooms(int[,] array2d, List<Room> rooms);
+            {
+                foreach (Room room in rooms)
+                {
+                    for (int i = 0; i < room.RectCount; ++i)
+                    {
+                        Rect rect = room.GetRect(i);
+                        //if (rect.Validate())
+                        for (int r = rect.MinRow; r < rect.MaxRow; ++r)
+                        {
+                            for (int c = rect.MinCol; c < rect.MinCol; ++c)
+                                array2d[r, c] = 1;
+                        }
+                    }
+                }
+            }
 
             GraphMatrix completeGraphMatrix;
             GraphMatrix manhattanMSTMatrix;
-            List<ManhattanEdge> createdEdges;
-            CreateRoomGraphs(rooms, out completeGraphMatrix, out manhattanMSTMatrix, out createdEdges);
+            List<ManhattanEdge> mstEdges;
+            CreateRoomGraphs(rooms, out completeGraphMatrix, out manhattanMSTMatrix, out mstEdges);
 
+            //TODO(용택): 디버그 프린트 삭제
             {
-                Console.WriteLine("---- Complete Matrix ----");
-                Console.Write("Lookup Index: ");
-                for (int i = 0; i < completeGraphMatrix.lookupTable.Length; ++i)
-                    Console.Write("{0}", i.ToString().PadLeft(3));
-                Console.WriteLine("");
-
-                for (int r = 0; r < completeGraphMatrix.LengthRow; ++r)
-                {
-                    for (int c = 0; c < completeGraphMatrix.LengthColumn; ++c)
-                        Console.Write("{0}", completeGraphMatrix.graphMatrix[r, c].ToString().PadLeft(6) );
-                    Console.Write("\n");
-                }
-                Console.WriteLine("---- MST Matrix ----");
-                for (int r = 0; r < manhattanMSTMatrix.LengthRow; ++r)
-                {
-                    for (int c = 0; c < manhattanMSTMatrix.LengthColumn; ++c)
-                        Console.Write("{0}", manhattanMSTMatrix.graphMatrix[r, c].ToString().PadLeft(6) );
-                    Console.Write("\n");
-                }
-                Console.WriteLine("---- ---- ---- ----");
+                //Console.WriteLine("---- Complete Matrix ----");
+                //Console.Write("Lookup Index: ");
+                //for (int i = 0; i < completeGraphMatrix.lookupTable.Length; ++i)
+                //    Console.Write("{0}", i.ToString().PadLeft(3));
+                //Console.WriteLine("");
+                //for (int r = 0; r < completeGraphMatrix.LengthRow; ++r)
+                //{
+                //    for (int c = 0; c < completeGraphMatrix.LengthColumn; ++c)
+                //        Console.Write("{0}", completeGraphMatrix.graphMatrix[r, c].ToString().PadLeft(6) );
+                //    Console.Write("\n");
+                //}
+                //Console.WriteLine("---- MST Matrix ----");
+                //for (int r = 0; r < manhattanMSTMatrix.LengthRow; ++r)
+                //{
+                //    for (int c = 0; c < manhattanMSTMatrix.LengthColumn; ++c)
+                //        Console.Write("{0}", manhattanMSTMatrix.graphMatrix[r, c].ToString().PadLeft(6) );
+                //    Console.Write("\n");
+                //}
+                //Console.WriteLine("---- ---- ---- ----");
             }
 
+            //TODO(용택): MST 를 기반으로 Corridor 를 만든다.
+            //TODO(용택): 통로를 만든다. Room1, Room2 에서 Edge 로 표현될 좌표를 선택하고, Manhattan 어프로치로 경로를 찾는다., Rectangle-Shape 가 될 것이다.
+            //TODO(용택): 이미 있는 Corridor 와 좌표가 겹치는 경우에 대해 고려한다.
+            List<Corridor> corridors = CreateCorridors(array2d, rooms, mstEdges);
+            DEBUG_Corridors = corridors;
             //TODO(용택): SelectEntranceRoom();         // --multiple Entrance & multiple Exit 을 고려하자. 복층구조에 용이할 것 같다.
             //int entranceRoomId = SelectEntranceRoom(rooms);
             //TODO(용택): SelectExitRoom();             // --경우에 따라 Entrance 와 같을 수 있다. --multiple exit 을 고려하자.
             //int exitRoomId     = SelectExitRoom(rooms, entranceRoomId); //NOTE(용택): 입구에 대한 의존성이 있으니 직접넘긴다.
 
-            //TODO(용택): 통로를 만든다. Room1, Room2 에서 Edge 로 표현될 좌표를 선택하고, Manhattan 어프로치로 경로를 찾는다., Rectangle-Shape 가 될 것이다.
-            //TODO(용택): 이미 있는 Corridor 와 좌표가 겹치는 경우에 대해 고려한다.
-            //통로를 만든다.
-            //List<Corridor> corridors = CreateCorridors(edgeMatrix);
-
             //TODO(용택): 위를 정리해서 내보낸다.
             //Room 정보와 Corridor 정보를 이용해 Map을 만들고, 세팅한 후 리턴.
-
-            //NOTE(용택): Thought, Consecutive 여부를 판단할 때, BT Sibling 이면 Consecutive 다. 그냥 거리로 하는 게 낫겠다.
-            //           거리로 소팅한다. 대상과의 거리를 알 수 있다. 그래프를 어떻게 그릴 것인가?
-
             DEBUG_generateRunCount += 1;
             return rooms;
         }
 
-        private static void CreateRoomGraphs(List<Room> rooms, out GraphMatrix completeGraphMatrix, out GraphMatrix manhattanMSTMatrix, out List<ManhattanEdge> createdEdges)
+        private static List<Corridor> CreateCorridors(int[,] array2d, List<Room> rooms, List<ManhattanEdge> edges)
+        {
+            List<Corridor> corridors = new List<Corridor>(edges.Count);
+
+            foreach (ManhattanEdge edge in edges)
+            {
+                Coord from = Room.FindRoom(rooms, edge.NodeA).GetRandomRect().Center;
+                Coord to   = Room.FindRoom(rooms, edge.NodeB).GetRandomRect().Center;
+
+                Coord vectorDiff = to - from;
+                vectorDiff.row = (vectorDiff.row == 0) ? 0 : vectorDiff.row / Math.Abs(vectorDiff.row);
+                vectorDiff.col = (vectorDiff.col == 0) ? 0 : vectorDiff.col / Math.Abs(vectorDiff.col);
+
+                int numSamples = Coord.CalculateManhattanDistance(from, to) + 1;
+                List<Coord> coords = new List<Coord>(numSamples);
+
+                //TODO(용택): (Corridor Creating :: Fill) 정말 랜덤이 답이냐?
+                //          일정횟수가 넘어가면 단위만큼 변곡시키도록 강제하는 방법은 있겠다.
+                int fillMode = (new Random()).Next(0, 0);
+                switch (fillMode)
+                {
+                    case 0://Row First Filling
+                        {
+                            Coord insertingCoord = from;
+                            coords.Add(insertingCoord);
+                            while (insertingCoord.row != to.row)
+                            {
+                                insertingCoord.row += vectorDiff.row;
+                                coords.Add(insertingCoord);
+                            }
+                            while (insertingCoord.col != to.col)
+                            {
+                                insertingCoord.col += vectorDiff.col;
+                                coords.Add(insertingCoord);
+                            }
+                        }
+                        break;
+                    case 1://Column First Filling
+                        {
+                            Coord insertingCoord = from;
+                            coords.Add(insertingCoord);
+                            while (insertingCoord.col != to.col)
+                            {
+                                insertingCoord.col += vectorDiff.col;
+                                coords.Add(insertingCoord);
+                            }
+                            while (insertingCoord.row != to.row)
+                            {
+                                insertingCoord.row += vectorDiff.row;
+                                coords.Add(insertingCoord);
+                            }
+                        }
+                        break;
+                }//switch-case
+                corridors.Add(new Corridor(coords));
+            }
+
+            return corridors;
+        }
+        private static void CreateRoomGraphs(List<Room> rooms, out GraphMatrix completeGraphMatrix, out GraphMatrix manhattanMSTMatrix, out List<ManhattanEdge> mstEdges)
         {
             completeGraphMatrix = new GraphMatrix();
             manhattanMSTMatrix  = new GraphMatrix();
 
             //NOTE(용택): 룩업테이블
             int[] lookupTable = new int[rooms.Count];
+            completeGraphMatrix.lookupTable = new int[rooms.Count];
+            manhattanMSTMatrix.lookupTable = new int[rooms.Count];
+
             for (int i = 0; i < lookupTable.Length; ++i)
             {
                 lookupTable[i] = rooms[i].Id;
             }
-            completeGraphMatrix.lookupTable = lookupTable;
-            manhattanMSTMatrix.lookupTable = lookupTable;
+            lookupTable.CopyTo(completeGraphMatrix.lookupTable, 0);
+            lookupTable.CopyTo(manhattanMSTMatrix.lookupTable, 0);
 
             //NOTE(용택): 그래프생성 및 초기화
             completeGraphMatrix.graphMatrix = new int[rooms.Count, rooms.Count];// 비용을 전부 들고 있는 완전그래프
@@ -142,45 +218,55 @@ namespace minorlife
 
             manhattanEdges.Sort(ManhattanEdge.DistanceComparison);
 
+            int[] unionFind = lookupTable;//NOTE(용택): 위에서 이미 각 Matrix 에 복사해두었으니 그대로 쓴다.
             int desiredEdgeCount = rooms.Count - 1;
-            createdEdges = new List<ManhattanEdge>(desiredEdgeCount);
-            //var manhattanEdges_enumerator = manhattanEdges.GetEnumerator();
-            //manhattanEdges_enumerator.MoveNext();//NOTE(용택): 첫 번째는 더미라서, Next 를 한번은 때려줘야 한다.
-            int index = 0;
-            while (createdEdges.Count < desiredEdgeCount)
+            mstEdges = new List<ManhattanEdge>(desiredEdgeCount);
+
+            int indexOfShortestEdges = 0;
+            while (mstEdges.Count < desiredEdgeCount)
             {
-                //ManhattanEdge shortestEdge = manhattanEdges_enumerator.Current;
-                ManhattanEdge shortestEdge = manhattanEdges[index];
+                ManhattanEdge shortestEdge = manhattanEdges[indexOfShortestEdges];
 
                 //TODO(용택): (Kruskal) SortedSet<> 의 CompareTo() 구현이 생각보다 어려워서 관계된 커스텀 MultiSet 을 만드는 게 쉬울 것 같다.
                 //TODO(용택): (Kruskal) 작은 쪽에서 선형탐색을 하니 오래 걸리진 않겠지만.. 마음이 찜찜하다 ㅜ
-                if ( createdEdges.Contains(shortestEdge) == false )
-                { 
-                    createdEdges.Add(shortestEdge);
-                    
-                    int indexOfA = Array.BinarySearch(manhattanMSTMatrix.lookupTable, shortestEdge.NodeA);
-                    int indexOfB = Array.BinarySearch(manhattanMSTMatrix.lookupTable, shortestEdge.NodeB);
-                    manhattanMSTMatrix.graphMatrix[indexOfA, indexOfB] = shortestEdge.ManhattanDistance;
-                    manhattanMSTMatrix.graphMatrix[indexOfB, indexOfA] = shortestEdge.ManhattanDistance;
+                if ( mstEdges.Contains(shortestEdge) == false )
+                {
+                    int indexA = manhattanMSTMatrix.GetIndexOf(shortestEdge.NodeA);
+                    int indexB = manhattanMSTMatrix.GetIndexOf(shortestEdge.NodeB);
+
+                    //NOTE(용택): (Kruskal) Array UnionFind 를 이용한다.
+                    if (unionFind[indexA] != unionFind[indexB])
+                    {
+                        mstEdges.Add(shortestEdge);
+
+                        int indexOfA = Array.BinarySearch(manhattanMSTMatrix.lookupTable, shortestEdge.NodeA);
+                        int indexOfB = Array.BinarySearch(manhattanMSTMatrix.lookupTable, shortestEdge.NodeB);
+                        manhattanMSTMatrix.graphMatrix[indexOfA, indexOfB] = shortestEdge.ManhattanDistance;
+                        manhattanMSTMatrix.graphMatrix[indexOfB, indexOfA] = shortestEdge.ManhattanDistance;
+
+                        int unionFrom = unionFind[indexA];
+                        for (int i = 0; i < unionFind.Length; ++i)
+                        {
+                            if (unionFind[i] == unionFrom)
+                                unionFind[i] = unionFind[indexB];
+                        }
+                    }
                 }
 
-                //manhattanEdges_enumerator.MoveNext();
-                index += 1;
+                indexOfShortestEdges += 1;
             }
 
-            foreach (ManhattanEdge i in createdEdges)
+            //TODO(용택): 디버그용 콘솔프린트 삭제
+            foreach (ManhattanEdge i in mstEdges)
             {
-                Console.WriteLine( i.ToString() );
+                //Console.WriteLine( i.ToString() );
             }
-        }
 
-        private static List<Corridor> CreateCorridors(int[,] edgeMatrix)
-        {
-            //MST를 만든다?
-            
-            //SortedSet<VertexPairByDisance>
-
-            throw new NotImplementedException();
+            System.Diagnostics.Debug.Assert(manhattanMSTMatrix.ContainsIsolateNode() == false, "Contains Isolate Node");
+            if (manhattanMSTMatrix.ContainsIsolateNode() == true)
+            {
+                Console.WriteLine("Contains Isolate Node");
+            }
         }
 
         #region BSP Tree Functions
@@ -339,7 +425,6 @@ namespace minorlife
 
             return rooms;
         }
-
         static private List<Room> MergeConsecutiveRooms(List<Room> rooms)
         {
             //TODO(용택): (MergeRooms)오버헤드가 큰 지 측정 필요.
@@ -350,7 +435,7 @@ namespace minorlife
                 while (b < rooms.Count)
                 {
                     if (rooms.Count == 1 || a < rooms.Count) break;
-                    if (a == b || Room.canMerge(rooms[a], rooms[b]) == false)
+                    if (a == b || Room.CanMerge(rooms[a], rooms[b]) == false)
                     {
                         b += 1;
                         continue;
@@ -362,23 +447,18 @@ namespace minorlife
             }
             return rooms;
         }
-
-        //TODO(용택): (DistanceSorted) Obsolote 시킨다. 맨하탄으로 계산하고, 노드 weight 계산 시 반환한다.
-        [ObsoleteAttribute()]
-        static private List<int> GetDistanceSqSortedRoomIds(int targetRoomId, List<Room> rooms)
-        {
-            Room targetRoom = Room.FindRoom(targetRoomId, rooms);
-            SortedDictionary<float, int> distanceIdPairs = Room.GetEuclidDistanceIdPairs(targetRoom, rooms);
-        
-            List<int> sortedIds = new List<int>(rooms.Count - 1);
-            foreach(var pair in distanceIdPairs)
-            {
-                //Console.WriteLine(pair.Value + " : " + pair.Key);
-                sortedIds.Add(pair.Value);
-            }
-        
-            return sortedIds;
-        }
         #endregion //Room Creation Functions
+        static private int[,] CreateArray2D(int width, int height)
+        {
+            int[,] array2d = new int[height, width];
+            for (int r = 0; r < height; ++r)
+            {
+                for (int c = 0; c < width; ++c)
+                {
+                    array2d[r,c] = 0;
+                }
+            }
+            return array2d;
+        }
     }
 }

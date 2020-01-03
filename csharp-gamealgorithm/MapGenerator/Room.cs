@@ -6,7 +6,7 @@ namespace minorlife
     //TODO(용택): 어떻게 채워 넣을 것이냐..?
     //NOTE(용택): BFS 를 응용하는 방법이 있겠다. ... 구체적인 건 떠올려보자.
 
-    public class Room
+    public class Room : IEquatable<Room>
     {
         #region Properties: Coord Utilities
         public int MinRow
@@ -69,19 +69,9 @@ namespace minorlife
                 Rect rect;
                 rect.row = MinRow;
                 rect.col = MinCol;
-                rect.width = MaxCol + 1;
-                rect.height = MaxRow + 1;
+                rect.width = MaxCol - MinCol + 1;
+                rect.height = MaxRow - MinRow + 1;
                 return rect;
-            }
-        }
-
-        public Coord RectFilterCentroid
-        {
-            get
-            {
-                Rect rectFilter = RectFilter;
-                Coord centroid = (rectFilter.BottomRight - rectFilter.TopLeft) * 0.5f;
-                return centroid;
             }
         }
         #endregion
@@ -97,10 +87,11 @@ namespace minorlife
             Id = _id++;
             _rects = new List<Rect>(capacity);
         }
-        public static Room FindRoom(int id, List<Room> rooms)
+        public static Room FindRoom(List<Room> rooms, int id)
         {
             //NOTE(용택): O(n) 으로 리스트에서 ID 를 찾아본다.
             //TODO(용택): Id 로 Sort 해두고, BinSearch 로 찾을 수 있도록 한다.
+            //          생성자 변경이나, 커스텀 생성자가 필요하다 (ID발급)
             //  rooms.Sort(IdComparison);
             //  rooms.BinarySearch(/*IComparer<T>*/);
             Room found = null;
@@ -114,11 +105,11 @@ namespace minorlife
             }
             return found;
         }
+
         public void Append(Rect rect)
         {
             _rects.Add(rect);
         }
-
         public void Append(Room room)
         {
             for (int i = 0; i < room.RectCount; ++i)
@@ -126,11 +117,17 @@ namespace minorlife
                 _rects.Add(room._rects[i]);
             }
         }
+        
         public Rect GetRect(int index)
         {
             return _rects[index];
         }
-
+        public Rect GetRandomRect()
+        {
+            Random r = new Random();
+            int random = r.Next(0, _rects.Count);
+            return GetRect(random);
+        }
         public int[] GetColumns(int row)
         {
             var columnSet = new HashSet<int>(MaxCol - MinCol + 1);
@@ -246,7 +243,6 @@ namespace minorlife
 
             return false;
         }
-
         public bool HasIntersection(Room other)
         {
             if (RectFilter.HasIntersection(other.RectFilter) == false)
@@ -267,7 +263,6 @@ namespace minorlife
 
             return false;
         }
-        
         public static bool HasIntersection(Room a, Room b)
         {
             return a.HasIntersection(b);
@@ -275,7 +270,7 @@ namespace minorlife
 
         public int CalculateManhattanDistance(Room other)
         {
-            Coord diff = RectFilterCentroid - other.RectFilterCentroid;
+            Coord diff = RectFilter.Center - other.RectFilter.Center;
             return Math.Abs(diff.row) + Math.Abs(diff.col);
         }
         public static int CalculateManhattanDistance(Room a, Room b)
@@ -284,39 +279,14 @@ namespace minorlife
         }
         public float GetEuclidDistanceSq(Room other)
         {
-            Coord diffCentroid = RectFilterCentroid - other.RectFilterCentroid;
+            Coord diffCentroid = RectFilter.Center - other.RectFilter.Center;
             return MathF.Pow(diffCentroid.row, 2.0f) + MathF.Pow(diffCentroid.col, 2.0f);
         }
         public static float GetEuclidDistanceSq(Room a, Room b)
         {
             return a.GetEuclidDistanceSq(b);
         }
-
-        //TODO(용택): Obsolote 시킨다. Matrix 계산할 때 구할 것이고, Manhattan Distance 를 기본으로 한다.
-        [ObsoleteAttribute()]
-        public static SortedDictionary<float, int> GetEuclidDistanceIdPairs(Room comparison, List<Room> roomsCompareTo)
-        {
-            //NOTE(용택): 대상 comparison 에 대한 <거리,ID> pair 를 리턴.
-            bool containsRoomComparer = false;
-            
-            SortedDictionary<float, int> distanceIdPairs = new SortedDictionary<float, int>();
-            foreach (Room room in roomsCompareTo)
-            {
-                if (room.Id == comparison.Id)
-                {
-                    containsRoomComparer = true;
-                    continue;
-                }
-
-                float roughEuclidDistanceSq = comparison.GetEuclidDistanceSq(room);
-                distanceIdPairs.Add(roughEuclidDistanceSq, room.Id);
-            }
-            
-            if( containsRoomComparer == false ) return null;//NOTE(용택): 에러, 사용이 잘못되었다. roomsCompareTo 에 comparison 가 포함되어있지 않다.
-            return distanceIdPairs;
-        }
-
-        public static bool canMerge(Room a, Room b)
+        public static bool CanMerge(Room a, Room b)
         {
             Rect filter = a.RectFilter;
             filter.row = (filter.row == 0) ? filter.row : filter.row - 1;
@@ -373,5 +343,20 @@ namespace minorlife
         {
             return a.MinCol.CompareTo(b.MinCol);
         };
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            Room other = obj as Room;
+            return other == null ? false : Equals(other);
+        }
+        public bool Equals(Room other)
+        {
+            return Id == other.Id;
+        }
     }   
 }

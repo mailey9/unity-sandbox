@@ -54,6 +54,17 @@ namespace minorlife
 
             return true;
         }
+        public void DEBUG_Apply(List<Corridor> corridors)
+        {
+            foreach(var corridor in corridors)
+            {
+                for (int i = 0; i < corridor.Count; ++i)
+                {
+                    Coord coord = corridor.GetCoord(i);
+                    _map[coord.row][coord.col] = 2;
+                }
+            }
+        }
 
         public override string ToString()
         {
@@ -70,7 +81,13 @@ namespace minorlife
             {
                 foreach(int i in rows)
                 {
-                    stringBuilder.Append( i==0 ? ". " : "# " );
+                    switch (i)
+                    {
+                        case 0: stringBuilder.Append( ". " ); break;
+                        case 1: stringBuilder.Append( "# " ); break;
+                        case 2: stringBuilder.Append( "_ " ); break;
+                    }
+                    //stringBuilder.Append( i==0 ? ". " : "# " );
                 }
                 stringBuilder.Append( "\n" );
             }

@@ -53,6 +53,20 @@ namespace minorlife
                 return coord;
             }
         }
+        public Coord Center
+        {
+            get
+            {
+                //Coord coord = (BottomRight - TopLeft) * 0.5f;
+                Coord coord;
+                coord.row = (int)( (row + row+height-1) * 0.5 );
+                coord.col = (int)( (col + col+width-1) * 0.5 );
+                return coord;
+                //10~50             //80~90
+                //  30              //  85
+                //10~70
+            }
+        }
         #endregion//Coord Utility Properties
         
         //TODO(용택): Rect 의 Validation 은 Map 에서 진행해야 한다.
