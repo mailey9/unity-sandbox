@@ -24,25 +24,25 @@ namespace minorlife
         static int DEBUG_generateRunCount = 0;
         static public List<Room> Generate(MapGenerateConfig config)
         {
-            int[,] array2d = CreateArray2D(config.Width, config.Height);
+            int[,] array2d = CreateArray2D(config.width, config.height);
             //NOTE(용택): Width * Height 로 사각형을 만들고, BSP로 사각형을 분할한다.
             //TODO(용택): 여기서 Map 을 반환할 것이므로, 함수를 좀 더 잘게 나눈다., 스택 용량은 생각하지 않는다.
-            List<Rect> rectsBinaryTree = CreateDividedRectBinaryTree(config.Height,
-                                                                     config.Width,
-                                                                     config.DivideLevel,
-                                                                     config.DivideRatioMin,
-                                                                     config.DivideRatioMax);
+            List<Rect> rectsBinaryTree = CreateDividedRectBinaryTree(config.height,
+                                                                     config.width,
+                                                                     config.divideTreeLevel,
+                                                                     config.divideRatioMin,
+                                                                     config.divideRatioMax);
             //NOTE(용택): 분할된 공간의 leaf 노드들만 남기고 버린다.
             //TODO(용택): 함수 분리, DiscardLeafNodes();
 
             //NOTE(용택): 각 공간을 일정횟수로 랜덤하게 채워넣는다. 과정 중 일정 너비/높이 이하는 버린다.
             List<Room> rooms = CreateRooms(rectsBinaryTree,
-                                           config.DivideLevel,
-                                           config.RectFillCount,
-                                           config.RectFillRatioMin,
-                                           config.RectFillRatioMax,
-                                           config.DiscardLessThanWidth,
-                                           config.DiscardLessThanHeight);
+                                           config.divideTreeLevel,
+                                           config.rectFillCount,
+                                           config.rectFillRatioMin,
+                                           config.rectFillRatioMax,
+                                           config.discardLessThanWidth,
+                                           config.discardLessThanHeight);
 
             //NOTE(용택): 좌표상 겹치는 공간은 하나의 방으로 취급하도록 합친다.
             rooms = MergeConsecutiveRooms(rooms);
@@ -206,8 +206,8 @@ namespace minorlife
             {
                 ManhattanEdge shortestEdge = manhattanEdges[indexOfShortestEdges];
 
-                //TODO(용택): (Kruskal) SortedSet<> 의 CompareTo() 구현이 생각보다 어려워서 관계된 커스텀 MultiSet 을 만드는 게 쉬울 것 같다.
-                //TODO(용택): (Kruskal) 작은 쪽에서 선형탐색을 하니 오래 걸리진 않겠지만.. 마음이 찜찜하다 ㅜ
+                //NOTE(용택): (Kruskal) SortedSet<> 의 CompareTo() 구현이 생각보다 어려워서 관계된 커스텀 MultiSet 을 만드는 게 쉬울 것 같다.
+                //NOTE(용택): (Kruskal) 작은 쪽에서 선형탐색을 하니 오래 걸리진 않겠지만.. 마음이 찜찜하다 ㅜ
                 if ( mstEdges.Contains(shortestEdge) == false )
                 {
                     int indexA = manhattanMSTMatrix.GetIndexOf(shortestEdge.NodeA);
@@ -391,17 +391,29 @@ namespace minorlife
         static private List<Room> MergeConsecutiveRooms(List<Room> rooms)
         {
             //TODO(용택): (MergeRooms)오버헤드가 큰 지 측정 필요.
-
+            //TODO(용택): (MergeRooms)루프문 재점검, a = -1; b = -1; ..a
             for (int a = 0; a < rooms.Count; ++a)
             {
                 for (int b = 0; b < rooms.Count; ++b)
                 {
-                    if (a==b) continue;
-
+                    if (a==4 && b==6)
+                    {
+                        Console.WriteLine("break.");
+                    }
+                    if (a==6 && b==4)
+                    {
+                        Console.WriteLine("break.");
+                    }
+                    if (rooms[a].Id==rooms[b].Id) continue;
                     if (Room.CanMerge(rooms[a],rooms[b]) == true)
                     {
                         rooms[a].Append(rooms[b]);
                         rooms.Remove(rooms[b]);
+
+                        System.Diagnostics.Debug.Assert(a <= b, "Bug! LogicError: a:" + a + " < b:" + b);
+                        a = -1;
+                        b = -1;//NOTE(용택): 다시 처음부터 돌린다.
+                        break;
                     }
                 }
             }

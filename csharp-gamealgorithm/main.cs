@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.IO;
 
-//TODO(용택): Rect , Coord 같은 건 대체 고려
+//TODO(용택): NOTE들 정리해서 문서로 빼고, 클린업 시작
 
 namespace minorlife
 {   
@@ -11,19 +11,6 @@ namespace minorlife
         static void Main(string[] args)
         {
             string runPath = AppDomain.CurrentDomain.BaseDirectory;
-
-            MapGenerateConfig mapGenConfig = MapGenerateConfig.DEFAULT;//new MapGenerateConfig();
-            mapGenConfig.Width = 100;
-            mapGenConfig.Height = 100;
-            mapGenConfig.DivideLevel = 6;
-            mapGenConfig.DivideRatioMin = 0.35f;
-            mapGenConfig.DivideRatioMax = 0.45f;
-            mapGenConfig.RectFillRatioMin = 0.25f;
-            mapGenConfig.RectFillRatioMax = 0.70f;
-            mapGenConfig.RectFillCount = 3;
-            mapGenConfig.DiscardLessThanWidth = 4;
-            mapGenConfig.DiscardLessThanHeight = 4;
-            //mapGenConfig.DiscardLessThanWidthHeightRatio = 0.40f  //TODO(용택): 가로-세로 비율이 편향된 모양을 버린다.
 
             Stopwatch sw_genOnly = new Stopwatch();
             Stopwatch sw = new Stopwatch();
@@ -34,13 +21,15 @@ namespace minorlife
             {
                 sw_genOnly.Start();
 
-                Map randomMap = new Map(mapGenConfig.Width, mapGenConfig.Height);
+                var mapGenConfig = new MapGenerateConfig();
+
+                Map randomMap = new Map(mapGenConfig.width, mapGenConfig.height);
                 randomMap.Apply( MapGenerator.Generate(mapGenConfig) );
                 randomMap.DEBUG_Apply( MapGenerator.DEBUG_Corridors );
                 
                 sw_genOnly.Stop();
 
-                string filename = runPath + "RandGenMap_" + mapGenConfig.Width + "x" + mapGenConfig.Height + "_Level" + mapGenConfig.DivideLevel + "_" + i + ".txt";
+                string filename = runPath + "RandGenMap_" + mapGenConfig.width + "x" + mapGenConfig.height + "_Level" + mapGenConfig.divideTreeLevel + "_" + i + ".txt";
                 File.WriteAllText(@filename, mapGenConfig.ToString() + "\n" + randomMap.ToString());
             }
 

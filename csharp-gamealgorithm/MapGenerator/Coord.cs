@@ -1,5 +1,6 @@
 using System;
-//TODO(용택): 이후 Unity Coord 또는 Vec2 대체 고려
+
+//TODO(용택): (Coord) Unity 적용시 Vector2 로 대체
 namespace minorlife
 {
     public struct Coord
