@@ -9,17 +9,17 @@ namespace minorlife
         public int height;
 
         #region Coord Utility Properties
-        public int MinRow { get{ return row; } }
-        public int MaxRow { get{ return row+height-1; } } 
-        public int MinCol { get{ return col; } }
-        public int MaxCol { get{ return col+width-1; } }
+        public int RowMin { get{ return row; } }
+        public int RowMax { get{ return row+height-1; } } 
+        public int ColMin { get{ return col; } }
+        public int ColMax { get{ return col+width-1; } }
         public Coord TopLeft
         {
             get
             {
                 Coord coord;
-                coord.row=MinRow;
-                coord.col=MinCol;
+                coord.row=RowMin;
+                coord.col=ColMin;
                 return coord;
             }
         }
@@ -28,8 +28,8 @@ namespace minorlife
             get
             {
                 Coord coord;
-                coord.row=MaxRow;
-                coord.col=MaxCol;
+                coord.row=RowMax;
+                coord.col=ColMax;
                 return coord;
             }
         }
@@ -38,8 +38,8 @@ namespace minorlife
             get
             {
                 Coord coord;
-                coord.row=MinRow;
-                coord.col=MaxCol;
+                coord.row=RowMin;
+                coord.col=ColMax;
                 return coord;
             }
         }
@@ -48,8 +48,8 @@ namespace minorlife
             get
             {
                 Coord coord;
-                coord.row=MaxRow;
-                coord.col=MinCol;
+                coord.row=RowMax;
+                coord.col=ColMin;
                 return coord;
             }
         }
@@ -88,22 +88,22 @@ namespace minorlife
         public int[] GetColumns(int row)
         {
             int[] columns = null;
-            if (MinRow <= row && row <= MaxRow)
+            if (RowMin <= row && row <= RowMax)
             {
                 columns = new int[width];
                 for (int c = 0; c < width; ++c)
-                    columns[c] = MinRow + c;
+                    columns[c] = RowMin + c;
             }
             return columns;
         }
         public int[] GetRows(int column)
         {
             int[] rows = null;
-            if (MinCol <= column && column <= MaxCol)
+            if (ColMin <= column && column <= ColMax)
             {
                 rows = new int[height];
                 for (int r = 0; r < height; ++r)
-                    rows[r] = MinRow + r;
+                    rows[r] = RowMin + r;
             }
             return rows;
         }
@@ -124,10 +124,9 @@ namespace minorlife
         public bool HasIntersection(Rect other)
         {
             //REF(용택): https://stackoverflow.com/questions/2752349/fast-rectangle-to-rectangle-intersection
-            if (other.row < row + height &&
-                other.col < col + width &&
-                row < other.row + other.height &&
-                col < other.col + other.width)
+            //return !(other.ColMin > ColMax || other.ColMax < ColMin || other.RowMin > RowMax || other.RowMax < RowMin);
+            if (other.row < row + height && other.col < col + width &&
+                row < other.row + other.height && col < other.col + other.width)
             {
                 return true;
             }

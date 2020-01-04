@@ -62,9 +62,9 @@ namespace minorlife
                     {
                         Rect rect = room.GetRect(i);
                         //if (rect.Validate())
-                        for (int r = rect.MinRow; r < rect.MaxRow; ++r)
+                        for (int r = rect.RowMin; r < rect.RowMax; ++r)
                         {
-                            for (int c = rect.MinCol; c < rect.MinCol; ++c)
+                            for (int c = rect.ColMin; c < rect.ColMin; ++c)
                                 array2d[r, c] = 1;
                         }
                     }
@@ -76,34 +76,13 @@ namespace minorlife
             List<ManhattanEdge> mstEdges;
             CreateRoomGraphs(rooms, out completeGraphMatrix, out manhattanMSTMatrix, out mstEdges);
 
-            //TODO(용택): 디버그 프린트 삭제
-            {
-                //Console.WriteLine("---- Complete Matrix ----");
-                //Console.Write("Lookup Index: ");
-                //for (int i = 0; i < completeGraphMatrix.lookupTable.Length; ++i)
-                //    Console.Write("{0}", i.ToString().PadLeft(3));
-                //Console.WriteLine("");
-                //for (int r = 0; r < completeGraphMatrix.LengthRow; ++r)
-                //{
-                //    for (int c = 0; c < completeGraphMatrix.LengthColumn; ++c)
-                //        Console.Write("{0}", completeGraphMatrix.graphMatrix[r, c].ToString().PadLeft(6) );
-                //    Console.Write("\n");
-                //}
-                //Console.WriteLine("---- MST Matrix ----");
-                //for (int r = 0; r < manhattanMSTMatrix.LengthRow; ++r)
-                //{
-                //    for (int c = 0; c < manhattanMSTMatrix.LengthColumn; ++c)
-                //        Console.Write("{0}", manhattanMSTMatrix.graphMatrix[r, c].ToString().PadLeft(6) );
-                //    Console.Write("\n");
-                //}
-                //Console.WriteLine("---- ---- ---- ----");
-            }
-
+            
             //TODO(용택): MST 를 기반으로 Corridor 를 만든다.
             //TODO(용택): 통로를 만든다. Room1, Room2 에서 Edge 로 표현될 좌표를 선택하고, Manhattan 어프로치로 경로를 찾는다., Rectangle-Shape 가 될 것이다.
             //TODO(용택): 이미 있는 Corridor 와 좌표가 겹치는 경우에 대해 고려한다.
             List<Corridor> corridors = CreateCorridors(array2d, rooms, mstEdges);
             DEBUG_Corridors = corridors;
+
             //TODO(용택): SelectEntranceRoom();         // --multiple Entrance & multiple Exit 을 고려하자. 복층구조에 용이할 것 같다.
             //int entranceRoomId = SelectEntranceRoom(rooms);
             //TODO(용택): SelectExitRoom();             // --경우에 따라 Entrance 와 같을 수 있다. --multiple exit 을 고려하자.
@@ -133,7 +112,7 @@ namespace minorlife
 
                 //TODO(용택): (Corridor Creating :: Fill) 정말 랜덤이 답이냐?
                 //          일정횟수가 넘어가면 단위만큼 변곡시키도록 강제하는 방법은 있겠다.
-                int fillMode = (new Random()).Next(0, 0);
+                int fillMode = Rand.Range(0,0);
                 switch (fillMode)
                 {
                     case 0://Row First Filling
@@ -256,17 +235,7 @@ namespace minorlife
                 indexOfShortestEdges += 1;
             }
 
-            //TODO(용택): 디버그용 콘솔프린트 삭제
-            foreach (ManhattanEdge i in mstEdges)
-            {
-                //Console.WriteLine( i.ToString() );
-            }
-
             System.Diagnostics.Debug.Assert(manhattanMSTMatrix.ContainsIsolateNode() == false, "Contains Isolate Node");
-            if (manhattanMSTMatrix.ContainsIsolateNode() == true)
-            {
-                Console.WriteLine("Contains Isolate Node");
-            }
         }
 
         #region BSP Tree Functions
@@ -277,10 +246,7 @@ namespace minorlife
             //            class 형 리턴을 생각해볼 수는 있다.
             //NOTE(용택): C# 버전에 따라 달라지는데, Unity는 최근까지 .NET Standard 2.0 이 Stable 버전이었다.
             //            따라서 기타 라이브러리 때문에, 가급적 구식버전을 쓰도록 한다.
-
-            //TODO(용택): 이후 Unity 랜덤으로 대체.
-            Random random = new Random();
-            float randomRatio = random.Next( (int)(minRatio*100), (int)(maxRatio*100) ) / 100.0f;
+            float randomRatio = Rand.Range(minRatio, maxRatio);
 
             int randomHeight = (int)(rect.height * randomRatio);
             divided_1 = divided_2 = rect;//우선 value copy.
@@ -293,9 +259,7 @@ namespace minorlife
         }
         static private void DivideHorizontally(Rect rect, float minRatio, float maxRatio, ref Rect divided_1, ref Rect divided_2)
         {
-            //TODO(용택): 이후 Unity 랜덤으로 대체.
-            Random random = new Random();
-            float randomRatio = random.Next( (int)(minRatio*100), (int)(maxRatio*100) ) / 100.0f;
+            float randomRatio = Rand.Range(minRatio, maxRatio);
 
             int randomWidth = (int)(rect.width * randomRatio);
             divided_1 = divided_2 = rect;//우선 value copy.
@@ -363,8 +327,7 @@ namespace minorlife
             Rect filled = rect;
 
             //TODO(용택): 이후 Unity 랜덤으로 대체.
-            Random random = new Random();
-            float randomRatio = random.Next( (int)(minRatio*100), (int)(maxRatio*100) ) / 100.0f;
+            float randomRatio = Rand.Range(minRatio, maxRatio);
 
             int randomWidth  = (int)(rect.width * randomRatio);
             int randomHeight = (int)(rect.height * randomRatio);
@@ -377,8 +340,8 @@ namespace minorlife
             int maxCol = rect.col + (rect.width - randomWidth);
 
             //NOTE(용택): random.Next(int min-include,int max-exclude); 이다.
-            filled.row = random.Next(rect.row, maxRow + 1);
-            filled.col = random.Next(rect.col, maxCol + 1);
+            filled.row = Rand.Range(rect.row, maxRow + 1);
+            filled.col = Rand.Range(rect.col, maxCol + 1);
 
             return filled;
         }
@@ -428,21 +391,18 @@ namespace minorlife
         static private List<Room> MergeConsecutiveRooms(List<Room> rooms)
         {
             //TODO(용택): (MergeRooms)오버헤드가 큰 지 측정 필요.
-            //TODO(용택): (MergeRooms)루프문 재점검 필요
+
             for (int a = 0; a < rooms.Count; ++a)
             {
-                int b = 0;
-                while (b < rooms.Count)
+                for (int b = 0; b < rooms.Count; ++b)
                 {
-                    if (rooms.Count == 1 || a < rooms.Count) break;
-                    if (a == b || Room.CanMerge(rooms[a], rooms[b]) == false)
-                    {
-                        b += 1;
-                        continue;
-                    }
+                    if (a==b) continue;
 
-                    rooms[a].Append(rooms[b]);
-                    rooms.Remove(rooms[b]);
+                    if (Room.CanMerge(rooms[a],rooms[b]) == true)
+                    {
+                        rooms[a].Append(rooms[b]);
+                        rooms.Remove(rooms[b]);
+                    }
                 }
             }
             return rooms;

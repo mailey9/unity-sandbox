@@ -13,16 +13,16 @@ namespace minorlife
             string runPath = AppDomain.CurrentDomain.BaseDirectory;
 
             MapGenerateConfig mapGenConfig = MapGenerateConfig.DEFAULT;//new MapGenerateConfig();
-            mapGenConfig.Width = 450;
-            mapGenConfig.Height = 300;
-            mapGenConfig.DivideLevel = 8;
+            mapGenConfig.Width = 100;
+            mapGenConfig.Height = 100;
+            mapGenConfig.DivideLevel = 6;
             mapGenConfig.DivideRatioMin = 0.35f;
             mapGenConfig.DivideRatioMax = 0.45f;
             mapGenConfig.RectFillRatioMin = 0.25f;
             mapGenConfig.RectFillRatioMax = 0.70f;
-            mapGenConfig.RectFillCount = 5;
-            mapGenConfig.DiscardLessThanWidth = 5;
-            mapGenConfig.DiscardLessThanHeight = 5;
+            mapGenConfig.RectFillCount = 3;
+            mapGenConfig.DiscardLessThanWidth = 4;
+            mapGenConfig.DiscardLessThanHeight = 4;
             //mapGenConfig.DiscardLessThanWidthHeightRatio = 0.40f  //TODO(용택): 가로-세로 비율이 편향된 모양을 버린다.
 
             Stopwatch sw_genOnly = new Stopwatch();

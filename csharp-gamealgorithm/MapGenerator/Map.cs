@@ -11,9 +11,6 @@ namespace minorlife
 
         //TODO(용택): 메모리레이아웃 고려, int[f,r,c] 나 linear 를 쓴다..
         private List<List<int>>   _map    = null;   //TODO(용택): 이걸 층(Floor)별로 다시 2d array 를 보관하는 걸 생각해본다. arr[level][y][x]; --int 는 struct Tile{} 로 대체.
-        private List<List<Room>>  _floors = null;   //TODO(용택): 상동, 필요없을 수 있다.
-        private List<List<Path>>  _paths  = null;   //TODO(용택): 상동, 필요없을 수 있다.
-
         public Map(int width, int height)//Create2dArray(int row, int col)
         {
             var array2d = new List< List<int> >(height);

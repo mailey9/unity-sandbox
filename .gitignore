@@ -1,4 +1,6 @@
+# sandbox directory will contain actual Unity project.
 .svn/
 .vs/
 csharp-gamealgorithm/obj/
 csharp-gamealgorithm/bin/
+sandbox/

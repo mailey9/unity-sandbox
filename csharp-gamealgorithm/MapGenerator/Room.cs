@@ -9,50 +9,50 @@ namespace minorlife
     public class Room : IEquatable<Room>
     {
         #region Properties: Coord Utilities
-        public int MinRow
+        public int RowMin
         {
             get
             {
                 int minRow = int.MaxValue;
                 foreach(var rect in _rects)
                 {
-                    minRow = Math.Min(minRow, rect.MinRow);
+                    minRow = Math.Min(minRow, rect.RowMin);
                 }
                 return minRow;
             }
         }
-        public int MaxRow
+        public int RowMax
         {
             get
             {
                 int maxRow = int.MinValue;
                 foreach(var rect in _rects)
                 {
-                    maxRow = Math.Max(maxRow, rect.MaxRow);
+                    maxRow = Math.Max(maxRow, rect.RowMax);
                 }
                 return maxRow;
             }
         }
-        public int MinCol
+        public int ColMin
         {
             get
             {
                 int minCol = int.MaxValue;
                 foreach(var rect in _rects)
                 {
-                    minCol = Math.Min(minCol, rect.MinCol);
+                    minCol = Math.Min(minCol, rect.ColMin);
                 }
                 return minCol;
             }
         }
-        public int MaxCol
+        public int ColMax
         {
             get
             {
                 int maxCol = int.MinValue;
                 foreach(var rect in _rects)
                 {
-                    maxCol = Math.Max(maxCol, rect.MaxCol);
+                    maxCol = Math.Max(maxCol, rect.ColMax);
                 }
                 return maxCol;
             }
@@ -67,10 +67,10 @@ namespace minorlife
             get
             {
                 Rect rect;
-                rect.row = MinRow;
-                rect.col = MinCol;
-                rect.width = MaxCol - MinCol + 1;
-                rect.height = MaxRow - MinRow + 1;
+                rect.row = RowMin;
+                rect.col = ColMin;
+                rect.width = ColMax - ColMin + 1;
+                rect.height = RowMax - RowMin + 1;
                 return rect;
             }
         }
@@ -89,9 +89,7 @@ namespace minorlife
         }
         public static Room FindRoom(List<Room> rooms, int id)
         {
-            //NOTE(용택): O(n) 으로 리스트에서 ID 를 찾아본다.
-            //TODO(용택): Id 로 Sort 해두고, BinSearch 로 찾을 수 있도록 한다.
-            //          생성자 변경이나, 커스텀 생성자가 필요하다 (ID발급)
+            //TODO(용택): Id 로 Sort 해두고, BinSearch 로 찾을 수 있도록 한다. 생성자 변경이나, 커스텀 생성자가 필요하다 (ID발급)
             //  rooms.Sort(IdComparison);
             //  rooms.BinarySearch(/*IComparer<T>*/);
             Room found = null;
@@ -124,13 +122,14 @@ namespace minorlife
         }
         public Rect GetRandomRect()
         {
-            Random r = new Random();
-            int random = r.Next(0, _rects.Count);
+            int random = Rand.Range(0, _rects.Count);
             return GetRect(random);
         }
         public int[] GetColumns(int row)
         {
-            var columnSet = new HashSet<int>(MaxCol - MinCol + 1);
+            //NOTE(용택): HashSet 생성자에 capacity 를 받지 않는다.
+            //NOTE(용택): .NET Standard 2.0 or Unity only?
+            var columnSet = new HashSet<int>();
 
             foreach(Rect rect in _rects)
             {
@@ -145,7 +144,7 @@ namespace minorlife
         }
         public int[] GetRows(int column)
         {
-            var rowSet = new HashSet<int>(MaxRow - MinRow + 1);
+            var rowSet = new HashSet<int>();
 
             foreach(Rect rect in _rects)
             {
@@ -162,7 +161,7 @@ namespace minorlife
         public Coord[] GetTopCoords()
         {
             //TODO(용택): HashSet 에 모든 Rect 의 Top 을 적재한 뒤 반환
-            int minRow = MinRow;
+            int minRow = RowMin;
             int[] topColumns = GetColumns(minRow);
 
             Coord[] topCoords = new Coord[topColumns.Length];
@@ -176,7 +175,7 @@ namespace minorlife
         public Coord[] GetBottomCoords()
         {
             //TODO(용택): HashSet 에 모든 Rect 의 Bottom 을 적재한 뒤 반환
-            int maxRow = MaxRow;
+            int maxRow = RowMax;
             int[] bottomColumns = GetColumns(maxRow);
 
             Coord[] bottomCoords = new Coord[bottomColumns.Length];
@@ -190,28 +189,28 @@ namespace minorlife
         public Coord[] GetLeftCoords()
         {
             //TODO(용택): HashSet 에 모든 Rect 의 Left 를 적재한 뒤 반환
-            int minCol = MinCol;
+            int minCol = ColMin;
             int[] leftRows = GetRows(minCol);
 
             Coord[] leftCoords = new Coord[leftRows.Length];
             for (int i = 0; i < leftCoords.Length; ++i)
             {
                 leftCoords[i].row = leftRows[i];
-                leftCoords[i].col = MinCol;
+                leftCoords[i].col = ColMin;
             }
             return leftCoords;
         }
         public Coord[] GetRightCoords()
         {
             //TODO(용택): HashSet 에 모든 Rect 의 Right 를 적재한 뒤 반환
-            int maxCol = MaxCol;
+            int maxCol = ColMax;
             int[] rightRows = GetRows(maxCol);
 
             Coord[] rightCoords = new Coord[rightRows.Length];
             for (int i = 0; i < rightCoords.Length; ++i)
             {
                 rightCoords[i].row = rightRows[i];
-                rightCoords[i].col = MaxCol;
+                rightCoords[i].col = ColMax;
             }
             return rightCoords;
         }
@@ -277,22 +276,13 @@ namespace minorlife
         {
             return a.CalculateManhattanDistance(b);
         }
-        public float GetEuclidDistanceSq(Room other)
-        {
-            Coord diffCentroid = RectFilter.Center - other.RectFilter.Center;
-            return MathF.Pow(diffCentroid.row, 2.0f) + MathF.Pow(diffCentroid.col, 2.0f);
-        }
-        public static float GetEuclidDistanceSq(Room a, Room b)
-        {
-            return a.GetEuclidDistanceSq(b);
-        }
         public static bool CanMerge(Room a, Room b)
         {
             Rect filter = a.RectFilter;
-            filter.row = (filter.row == 0) ? filter.row : filter.row - 1;
-            filter.col = (filter.col == 0) ? filter.col : filter.col - 1;
-            filter.width += 1;
-            filter.height += 1;
+            filter.row = (filter.row == 0) ? 0 : filter.row - 1;
+            filter.col = (filter.col == 0) ? 0 : filter.col - 1;
+            filter.width = (filter.col == 0) ? filter.width + 1 : filter.width + 2;;
+            filter.height = (filter.row == 0) ? filter.height + 1 : filter.height + 2;
 
             //NOTE(용택): 한 칸을 키운 RectFilter 와 대상이 교차하는지 살펴본다. 이 과정에 실패하면 이미 걸러진다.
             if (filter.HasIntersection(b.RectFilter) == false)
@@ -300,29 +290,29 @@ namespace minorlife
 
             //NOTE(용택): 한 칸을 키운 좌표들과 대상이 교차하는지 살펴본다. 4방향 전수좌표를 검사한다.
             //TODO(용택): 오버헤드가 큰 지 측정 필요.
-            int   topRow     = (a.MinRow == 0) ? a.MinRow : a.MinRow - 1;
-            int[] topColumns = a.GetColumns(a.MinRow);
+            int   topRow     = (a.RowMin == 0) ? a.RowMin : a.RowMin - 1;
+            int[] topColumns = a.GetColumns(a.RowMin);
             for(int i = 0; i < topColumns.Length; ++i)
             {
                 if (b.Contains(topRow, topColumns[i]) == true) return true;
             }
 
-            int   bottomRow     = a.MaxRow + 1;
-            int[] bottomColumns = a.GetColumns(a.MaxRow);
+            int   bottomRow     = a.RowMax + 1;
+            int[] bottomColumns = a.GetColumns(a.RowMax);
             for(int i = 0; i < bottomColumns.Length; ++i)
             {
                 if (b.Contains(bottomRow, bottomColumns[i]) == true) return true;
             }
 
-            int   leftColumn = (a.MinCol == 0) ? a.MinCol : a.MinCol - 1;
-            int[] leftRows   = a.GetRows(a.MinCol);
+            int   leftColumn = (a.ColMin == 0) ? a.ColMin : a.ColMin - 1;
+            int[] leftRows   = a.GetRows(a.ColMin);
             for(int i = 0; i < leftRows.Length; ++i)
             {
                 if (b.Contains(leftRows[i], leftColumn) == true) return true;
             }
 
-            int   rightColumn = a.MaxCol + 1;
-            int[] rightRows   = a.GetRows(a.MaxCol);
+            int   rightColumn = a.ColMax + 1;
+            int[] rightRows   = a.GetRows(a.ColMax);
             for(int i = 0; i < rightRows.Length; ++i)
             {
                 if (b.Contains(rightRows[i], rightColumn) == true) return true;
@@ -334,14 +324,6 @@ namespace minorlife
         public static Comparison<Room> IdComparison = delegate (Room a, Room b)
         {
             return a.Id.CompareTo(b.Id);
-        };
-        public static Comparison<Room> RowMajorComparison = delegate (Room a, Room b)
-        {
-            return a.MinRow.CompareTo(b.MinRow);
-        };
-        public static Comparison<Room> ColumnMajorComparison = delegate (Room a, Room b)
-        {
-            return a.MinCol.CompareTo(b.MinCol);
         };
 
         public override int GetHashCode()
