@@ -279,10 +279,10 @@ namespace minorlife
         public static bool CanMerge(Room a, Room b)
         {
             Rect filter = a.RectFilter;
-            filter.row = (filter.row == 0) ? 0 : filter.row - 1;
-            filter.col = (filter.col == 0) ? 0 : filter.col - 1;
-            filter.width = (filter.col == 0) ? filter.width + 1 : filter.width + 2;;
-            filter.height = (filter.row == 0) ? filter.height + 1 : filter.height + 2;
+            filter.row = (a.RowMin == 0) ? 0 : filter.row - 1;
+            filter.col = (a.ColMin == 0) ? 0 : filter.col - 1;
+            filter.width = (a.RowMin == 0) ? filter.width + 1 : filter.width + 2;;
+            filter.height = (a.ColMin == 0) ? filter.height + 1 : filter.height + 2;
 
             //NOTE(용택): 한 칸을 키운 RectFilter 와 대상이 교차하는지 살펴본다. 이 과정에 실패하면 이미 걸러진다.
             if (filter.HasIntersection(b.RectFilter) == false)

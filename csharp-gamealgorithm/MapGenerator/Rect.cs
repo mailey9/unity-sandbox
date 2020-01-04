@@ -92,7 +92,7 @@ namespace minorlife
             {
                 columns = new int[width];
                 for (int c = 0; c < width; ++c)
-                    columns[c] = RowMin + c;
+                    columns[c] = ColMin + c;
             }
             return columns;
         }
