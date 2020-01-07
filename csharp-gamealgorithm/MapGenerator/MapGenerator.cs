@@ -20,11 +20,10 @@ namespace minorlife
 {
     public class MapGenerator
     {
-        public static List<Corridor> DEBUG_Corridors = null;
         static int DEBUG_generateRunCount = 0;
-        static public List<Room> Generate(MapGenerateConfig config)
+        static public Map.GeneratedMap Generate(MapGenerateConfig config)
         {
-            int[,] array2d = CreateArray2D(config.width, config.height);
+            Map.Tile[,] tileMap = Create2DTileArray(config.width, config.height);
             //NOTE(용택): Width * Height 로 사각형을 만들고, BSP로 사각형을 분할한다.
             //TODO(용택): 여기서 Map 을 반환할 것이므로, 함수를 좀 더 잘게 나눈다., 스택 용량은 생각하지 않는다.
             List<Rect> rectsBinaryTree = CreateDividedRectBinaryTree(config.height,
@@ -33,7 +32,7 @@ namespace minorlife
                                                                      config.divideRatioMin,
                                                                      config.divideRatioMax);
             //NOTE(용택): 분할된 공간의 leaf 노드들만 남기고 버린다.
-            //TODO(용택): 함수 분리, DiscardLeafNodes();
+            //TODO(용택): 함수 분리, rectsBinaryTree = DiscardNodesExceptLeaves(rectsBinaryTree, config.divideTreeLevel);
 
             //NOTE(용택): 각 공간을 일정횟수로 랜덤하게 채워넣는다. 과정 중 일정 너비/높이 이하는 버린다.
             List<Room> rooms = CreateRooms(rectsBinaryTree,
@@ -45,7 +44,10 @@ namespace minorlife
                                            config.discardLessThanHeight);
 
             //NOTE(용택): 좌표상 겹치는 공간은 하나의 방으로 취급하도록 합친다.
+            int DEBUG_beforeMerged = rooms.Count;
             rooms = MergeConsecutiveRooms(rooms);
+            int DEBUG_afterMerged = rooms.Count;
+            Console.WriteLine("Room Merged: before(" + DEBUG_beforeMerged + "), after(" + DEBUG_afterMerged + ")");
 
             //TODO(용택): Width/Height 비율이 나쁠 때 버리는 것을 고려.
             //NOTE(용택): 비율이 나쁠 때 해당 공간을 버린다.
@@ -54,34 +56,52 @@ namespace minorlife
             //NOTE(용택): 후에 BinSearch 에 용이하도록 ID로 정렬해 둔다.
             //NOTE(용택): 사실 id 부여방식이 0부터 ++ 기 때문에 오름차순이 되긴해서 굳이 필요없긴 하다.
             rooms.Sort(Room.IdComparison);
+
             //TODO(용택): 다음 구현은 함수로 뺀다. int[,] ApplyRooms(int[,] array2d, List<Room> rooms);
             {
+                //  01. 방을 채운다.
                 foreach (Room room in rooms)
                 {
                     for (int i = 0; i < room.RectCount; ++i)
                     {
                         Rect rect = room.GetRect(i);
-                        //if (rect.Validate())
-                        for (int r = rect.RowMin; r < rect.RowMax; ++r)
+                        for (int r = rect.RowMin; r <= rect.RowMax; ++r)
                         {
-                            for (int c = rect.ColMin; c < rect.ColMin; ++c)
-                                array2d[r, c] = 1;
+                            for (int c = rect.ColMin; c <= rect.ColMax; ++c)
+                                tileMap[r, c] = Map.Tile.Room;
                         }
+                    }
+                }
+                //  02. 방의 벽들을 채운다. (RoomEdges)
+                foreach (Room room in rooms)
+                {
+                    List<Coord> roomEdgeCoords = room.GetHullCoords(tileMap);
+                    foreach (Coord egdeCoord in roomEdgeCoords)
+                    {
+                        tileMap[egdeCoord.row, egdeCoord.col] = Map.Tile.RoomWall;
                     }
                 }
             }
 
-            GraphMatrix completeGraphMatrix;
-            GraphMatrix manhattanMSTMatrix;
+            GraphMatrix         completeGraphMatrix;
+            GraphMatrix         manhattanMSTMatrix;
             List<ManhattanEdge> mstEdges;
             CreateRoomGraphs(rooms, out completeGraphMatrix, out manhattanMSTMatrix, out mstEdges);
-
+            //TODO(용택): 길을 몇 개 추가해서 생성한다.
             
             //TODO(용택): MST 를 기반으로 Corridor 를 만든다.
-            //TODO(용택): 통로를 만든다. Room1, Room2 에서 Edge 로 표현될 좌표를 선택하고, Manhattan 어프로치로 경로를 찾는다., Rectangle-Shape 가 될 것이다.
             //TODO(용택): 이미 있는 Corridor 와 좌표가 겹치는 경우에 대해 고려한다.
-            List<Corridor> corridors = CreateCorridors(array2d, rooms, mstEdges);
-            DEBUG_Corridors = corridors;
+            List<Corridor> corridors = CreateCorridors(tileMap, rooms, mstEdges);
+            {
+                foreach(var corridor in corridors)
+                {
+                    for (int i = 0; i < corridor.Count; ++i)
+                    {
+                        Coord coord = corridor.GetCoord(i);
+                        tileMap[coord.row, coord.col] = Map.Tile.Corridor;
+                    }
+                }
+            }
 
             //TODO(용택): SelectEntranceRoom();         // --multiple Entrance & multiple Exit 을 고려하자. 복층구조에 용이할 것 같다.
             //int entranceRoomId = SelectEntranceRoom(rooms);
@@ -91,10 +111,18 @@ namespace minorlife
             //TODO(용택): 위를 정리해서 내보낸다.
             //Room 정보와 Corridor 정보를 이용해 Map을 만들고, 세팅한 후 리턴.
             DEBUG_generateRunCount += 1;
-            return rooms;
+
+            Map.GeneratedMap generatedMap;
+            generatedMap.tileMap = tileMap;
+            generatedMap.rooms = rooms;
+            generatedMap.corridors = corridors;
+            generatedMap.completeMatrix = completeGraphMatrix;
+            generatedMap.pathMatrix = manhattanMSTMatrix;
+
+            return generatedMap;
         }
 
-        private static List<Corridor> CreateCorridors(int[,] array2d, List<Room> rooms, List<ManhattanEdge> edges)
+        private static List<Corridor> CreateCorridors(Map.Tile[,] tileMap, List<Room> rooms, List<ManhattanEdge> edges)
         {
             List<Corridor> corridors = new List<Corridor>(edges.Count);
 
@@ -112,6 +140,22 @@ namespace minorlife
 
                 //TODO(용택): (Corridor Creating :: Fill) 정말 랜덤이 답이냐?
                 //          일정횟수가 넘어가면 단위만큼 변곡시키도록 강제하는 방법은 있겠다.
+                for (int i = 0; i < numSamples; ++i)
+                {
+                //    int mode = Rand.Range(0, 1);
+                //    mode = 10;
+                //    //전진하면서 sample 해본다.
+                //    //  row 방향으로 갈 때는
+
+
+                    //  개수만큼 샘플링하면서 전진한다.
+                    //      row 방향으로 갈 때는 width (좌, 우)를 sampling 한다.
+                    //      col 방향으로 갈 때는 height (상, 하)를 sampling 한다.
+                    //  3/2 = 1, 2/2 = 1, 4/2 = 2, 5/2 = 2, 6/2 = 3
+                    //   /2 = 0,  /2 = 0,  /2 = 1,  /2 = 1,  /2 = 1
+                    //  3%2 = 1, 2%2 = 0, 4%2 = 0, 5%2 = 1, 6%2 = 0
+                }
+
                 int fillMode = Rand.Range(0,0);
                 switch (fillMode)
                 {
@@ -352,7 +396,7 @@ namespace minorlife
             int numberOfLeafNodes  = leafNodeIndexStart;
 
             List<Rect> leaves = rectBinaryTree.GetRange(leafNodeIndexStart, numberOfLeafNodes);
-            List<Room>     rooms  = new List<Room>(leaves.Count);
+            List<Room> rooms  = new List<Room>(leaves.Count);
 
             for (int i = 0; i < numberOfLeafNodes; ++i)
             {
@@ -365,6 +409,7 @@ namespace minorlife
                 rooms.Add(new Room(fillCount));
 
                 int fillLoopCount = 0;
+                //TODO(용택): "포함" 이면 버리는 걸 고려한다. (영역안쪽에 잡히는 경우..그래픽슨데..)
                 while (fillLoopCount < fillCount)
                 {
                     Rect filled = CalculateFilledRect(leaves[i], minFillRatio, maxFillRatio);
@@ -396,23 +441,25 @@ namespace minorlife
             {
                 for (int b = 0; b < rooms.Count; ++b)
                 {
-                    if (a==4 && b==6)
+                    if (a == b)
                     {
-                        Console.WriteLine("break.");
+                        continue;
                     }
-                    if (a==6 && b==4)
+                    if (rooms[a].Id == rooms[b].Id)
                     {
-                        Console.WriteLine("break.");
+                        System.Diagnostics.Debug.Assert(a <= b, "Bug! LogicError: Id[a]:" + rooms[a].Id + " == Id[b]:" + b);
+                        continue;
                     }
-                    if (rooms[a].Id==rooms[b].Id) continue;
-                    if (Room.CanMerge(rooms[a],rooms[b]) == true)
+
+                    Room.MergeDirection mergeDirection = new Room.MergeDirection();
+                    if (Room.CanMerge(rooms[a],rooms[b], ref mergeDirection) == true)
                     {
                         rooms[a].Append(rooms[b]);
                         rooms.Remove(rooms[b]);
 
                         System.Diagnostics.Debug.Assert(a <= b, "Bug! LogicError: a:" + a + " < b:" + b);
                         a = -1;
-                        b = -1;//NOTE(용택): 다시 처음부터 돌린다.
+                        b = -1;//NOTE(용택): 다시 처음부터 돌린다., n^3 이라 문제있다.
                         break;
                     }
                 }
@@ -420,14 +467,14 @@ namespace minorlife
             return rooms;
         }
         #endregion //Room Creation Functions
-        static private int[,] CreateArray2D(int width, int height)
+        static private Map.Tile[,] Create2DTileArray(int width, int height)
         {
-            int[,] array2d = new int[height, width];
+            Map.Tile[,] array2d = new Map.Tile[height, width];
             for (int r = 0; r < height; ++r)
             {
                 for (int c = 0; c < width; ++c)
                 {
-                    array2d[r,c] = 0;
+                    array2d[r,c] = Map.Tile.Empty;
                 }
             }
             return array2d;

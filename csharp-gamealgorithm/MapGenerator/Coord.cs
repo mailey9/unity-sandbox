@@ -1,9 +1,9 @@
 using System;
-
+using System.Collections.Generic;
 //TODO(용택): (Coord) Unity 적용시 Vector2 로 대체
 namespace minorlife
 {
-    public struct Coord
+    public struct Coord : IEquatable<Coord>, IComparer<Coord>
     {
         public int row;
         public int col;
@@ -29,5 +29,54 @@ namespace minorlife
             Coord diff = a - b;
             return Math.Abs(diff.row) + Math.Abs(diff.col);
         }
+
+        public override int GetHashCode()
+        {
+            return 42 * row.GetHashCode() + 33 * col.GetHashCode();
+        }
+        public override bool Equals(object obj)
+        {
+            if (obj == null) return false;
+            Coord? coord = obj as Coord?;
+            return coord == null ? false : Equals(coord);
+        }
+        public bool Equals(Coord other)
+        {
+            if (row == other.row && col == other.col)
+                return true;
+            else
+                return false;
+        }
+        public static bool operator==(Coord a, Coord b)
+        {
+            return a.Equals(b);
+        }
+        public static bool operator!=(Coord a, Coord b)
+        {
+            return !a.Equals(b);
+        }
+
+        public override string ToString()
+        {
+            return "r:" + row + ", c:" + col;
+        }
+
+        public int Compare(Coord a, Coord b)
+        {
+            int rowCompare = a.row.CompareTo(b.row);
+            if (rowCompare != 0)
+                return rowCompare;
+            else
+                return a.col.CompareTo(b.col);
+        }
+
+        public static Comparison<Coord> RowColumnComparison = delegate (Coord a, Coord b)
+        {
+            int rowCompare = a.row.CompareTo(b.row);
+            if (rowCompare != 0)
+                return rowCompare;
+            else
+                return a.col.CompareTo(b.col);
+        };
     }
 }

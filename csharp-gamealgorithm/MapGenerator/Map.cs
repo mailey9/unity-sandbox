@@ -6,90 +6,54 @@ namespace minorlife
 {
     public class Map
     {
-        public int Width  { get{ return _map[0].Count; } }
-        public int Height { get{ return _map.Count; } }
-
-        //TODO(용택): (Map) array 메모리레이아웃 고려, int[f,r,c] 나 linear 를 쓴다..
-        //TODO(용택): (Map) array 이걸 층(Floor)별로 다시 2d array 를 보관하는 걸 생각해본다. arr[level][y][x]; --int 는 struct Tile{} 로 대체.
-        private List<List<int>>   _map    = null;
-        public Map(int width, int height)//Create2dArray(int row, int col)
+        public enum Tile
         {
-            var array2d = new List< List<int> >(height);
-            for(int r = 0; r < height; ++r)
-            {
-                array2d.Add( new List<int>(new int[width]) );
-                for(int c = 0; c < array2d[r].Count; ++c)
-                {
-                    array2d[r][c] = 0;
-                }
-            }
-
-            _map = array2d;
+            Empty   = 0,
+            Room    = 1,
+            RoomWall= 2,
+            Corridor= 3
         }
 
-        public bool Apply(List<Room> rooms)
+        public struct GeneratedMap
         {
-            foreach(Room room in rooms)
-            {
-                for (int i = 0; i < room.RectCount; ++i)
-                {
-                    Rect rect = room.GetRect(i);
-
-                    if (rect.Validate(this) == false)
-                    {
-                        return false;
-                    }
-
-                    for (int r = rect.row; r < rect.row + rect.height; ++r)
-                    {
-                        for (int c = rect.col; c < rect.col + rect.width; ++c)
-                        {
-                            _map[r][c] = 1;
-                        }
-                    }
-                }
-            }
-
-            return true;
+            public Tile[,]         tileMap;
+            public List<Room>      rooms;
+            public List<Corridor>  corridors;
+            public GraphMatrix     completeMatrix;
+            public GraphMatrix     pathMatrix;
         }
-        public void DEBUG_Apply(List<Corridor> corridors)
+
+        public int Width  { get{ return MapData.tileMap.GetLength(0); } }
+        public int Height { get{ return MapData.tileMap.GetLength(1); } }
+
+        //TODO(용택): (Map) tilemap array 이걸 층(Floor)별로 다시 2d array 를 보관하는 걸 생각해본다. arr[level][y][x];
+        public GeneratedMap MapData { get; private set; }
+
+        public Map(GeneratedMap generatedMap)
         {
-            foreach(var corridor in corridors)
-            {
-                for (int i = 0; i < corridor.Count; ++i)
-                {
-                    Coord coord = corridor.GetCoord(i);
-                    _map[coord.row][coord.col] = 2;
-                }
-            }
+            MapData = generatedMap;
+            //bool rv = Setup(generatedMap); //검증?
         }
 
         public override string ToString()
         {
-            int capa = _map.Count;
-            foreach(var rows in _map)
-            {
-                capa += rows.Count;
-            }
-            capa *= 2;
-            capa += _map.Count;
-
+            int capa = MapData.tileMap.Length * 2 + MapData.tileMap.Length;
             StringBuilder stringBuilder = new StringBuilder(capa);
-            foreach(var rows in _map)
-            {
-                foreach(int i in rows)
-                {
-                    switch (i)
-                    {
-                        case 0: stringBuilder.Append( ". " ); break;
-                        case 1: stringBuilder.Append( "# " ); break;
-                        case 2: stringBuilder.Append( "_ " ); break;
-                    }
-                    //stringBuilder.Append( i==0 ? ". " : "# " );
-                }
-                stringBuilder.Append( "\n" );
-            }
 
+            for (int r = 0; r < Height; ++r)
+            {
+                for (int c = 0; c < Width; ++c)
+                {
+                    switch (MapData.tileMap[r,c])
+                    {
+                        case Tile.Empty:    stringBuilder.Append( ". " ); break;
+                        case Tile.Room:     stringBuilder.Append( "  " ); break;
+                        case Tile.RoomWall: stringBuilder.Append( "XX" ); break;
+                        case Tile.Corridor: stringBuilder.Append( "_ " ); break;
+                    }
+                }
+                stringBuilder.Append("\n");
+            }
             return stringBuilder.ToString();
         }
     }

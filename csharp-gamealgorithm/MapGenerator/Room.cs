@@ -3,18 +3,20 @@ using System.Collections.Generic;
 
 namespace minorlife
 {
-    //TODO(용택): 어떻게 채워 넣을 것이냐..?
-    //NOTE(용택): BFS 를 응용하는 방법이 있겠다. ... 구체적인 건 떠올려보자.
-
     public class Room : IEquatable<Room>
     {
+        public enum MergeDirection
+        {
+            None, Top, Bottom, Left, Right
+        }
+
         #region Properties: Coord Utilities
         public int RowMin
         {
             get
             {
                 int minRow = int.MaxValue;
-                foreach(var rect in _rects)
+                foreach (var rect in _rects)
                 {
                     minRow = Math.Min(minRow, rect.RowMin);
                 }
@@ -26,7 +28,7 @@ namespace minorlife
             get
             {
                 int maxRow = int.MinValue;
-                foreach(var rect in _rects)
+                foreach (var rect in _rects)
                 {
                     maxRow = Math.Max(maxRow, rect.RowMax);
                 }
@@ -38,7 +40,7 @@ namespace minorlife
             get
             {
                 int minCol = int.MaxValue;
-                foreach(var rect in _rects)
+                foreach (var rect in _rects)
                 {
                     minCol = Math.Min(minCol, rect.ColMin);
                 }
@@ -50,7 +52,7 @@ namespace minorlife
             get
             {
                 int maxCol = int.MinValue;
-                foreach(var rect in _rects)
+                foreach (var rect in _rects)
                 {
                     maxCol = Math.Max(maxCol, rect.ColMax);
                 }
@@ -75,23 +77,21 @@ namespace minorlife
             }
         }
         #endregion
-        
+
         public int RectCount { get { return _rects.Count; } }
         public int Id { get; private set; }
-        
+
         private static int _id = 0;
         private List<Rect> _rects = null;
 
-        public Room(int capacity=0)
+        public Room(int capacity = 0)
         {
             Id = _id++;
             _rects = new List<Rect>(capacity);
         }
         public static Room FindRoom(List<Room> rooms, int id)
         {
-            //TODO(용택): Id 로 Sort 해두고, BinSearch 로 찾을 수 있도록 한다. 생성자 변경이나, 커스텀 생성자가 필요하다 (ID발급)
-            //  rooms.Sort(IdComparison);
-            //  rooms.BinarySearch(/*IComparer<T>*/);
+            //NOTE(용택): (FindRoom) LinearSearch
             Room found = null;
             foreach (Room room in rooms)
             {
@@ -107,6 +107,10 @@ namespace minorlife
         public void Append(Rect rect)
         {
             _rects.Add(rect);
+            _rects.Sort(Rect.RowColumnWidthHeightComparison);
+
+            //TODO(용택): (Concave Hull) Rect 가 추가될 때마다 좌표를 계산해두도록 한다.
+            //NOTE(용택): (Concave Hull) 다소 무겁지만 미리해둔다.
         }
         public void Append(Room room)
         {
@@ -115,7 +119,7 @@ namespace minorlife
                 _rects.Add(room._rects[i]);
             }
         }
-        
+
         public Rect GetRect(int index)
         {
             return _rects[index];
@@ -131,13 +135,13 @@ namespace minorlife
             //NOTE(용택): .NET Standard 2.0 or Unity only?
             var columnSet = new HashSet<int>();
 
-            foreach(Rect rect in _rects)
+            foreach (Rect rect in _rects)
             {
                 int[] resultColumns = rect.GetColumns(row);
                 if (resultColumns != null)
                     columnSet.UnionWith(resultColumns);
             }
-            
+
             int[] columns = new int[columnSet.Count];
             columnSet.CopyTo(columns);//NOTE(용택): 코드스멜인가..?
             return columns;
@@ -146,7 +150,7 @@ namespace minorlife
         {
             var rowSet = new HashSet<int>();
 
-            foreach(Rect rect in _rects)
+            foreach (Rect rect in _rects)
             {
                 int[] resultRows = rect.GetRows(column);
                 if (resultRows != null)
@@ -157,69 +161,11 @@ namespace minorlife
             rowSet.CopyTo(rows);//NOTE(용택): 코드스멜인가..?
             return rows;
         }
-
-        public Coord[] GetTopCoords()
-        {
-            //TODO(용택): HashSet 에 모든 Rect 의 Top 을 적재한 뒤 반환
-            int minRow = RowMin;
-            int[] topColumns = GetColumns(minRow);
-
-            Coord[] topCoords = new Coord[topColumns.Length];
-            for(int i = 0; i < topCoords.Length; ++i)
-            {
-                topCoords[i].row = minRow;
-                topCoords[i].col = topColumns[i];
-            }
-            return topCoords;
-        }
-        public Coord[] GetBottomCoords()
-        {
-            //TODO(용택): HashSet 에 모든 Rect 의 Bottom 을 적재한 뒤 반환
-            int maxRow = RowMax;
-            int[] bottomColumns = GetColumns(maxRow);
-
-            Coord[] bottomCoords = new Coord[bottomColumns.Length];
-            for (int i = 0; i < bottomCoords.Length; ++i)
-            {
-                bottomCoords[i].row = maxRow;
-                bottomCoords[i].col = bottomColumns[i];
-            }
-            return bottomCoords;
-        }
-        public Coord[] GetLeftCoords()
-        {
-            //TODO(용택): HashSet 에 모든 Rect 의 Left 를 적재한 뒤 반환
-            int minCol = ColMin;
-            int[] leftRows = GetRows(minCol);
-
-            Coord[] leftCoords = new Coord[leftRows.Length];
-            for (int i = 0; i < leftCoords.Length; ++i)
-            {
-                leftCoords[i].row = leftRows[i];
-                leftCoords[i].col = ColMin;
-            }
-            return leftCoords;
-        }
-        public Coord[] GetRightCoords()
-        {
-            //TODO(용택): HashSet 에 모든 Rect 의 Right 를 적재한 뒤 반환
-            int maxCol = ColMax;
-            int[] rightRows = GetRows(maxCol);
-
-            Coord[] rightCoords = new Coord[rightRows.Length];
-            for (int i = 0; i < rightCoords.Length; ++i)
-            {
-                rightCoords[i].row = rightRows[i];
-                rightCoords[i].col = ColMax;
-            }
-            return rightCoords;
-        }
-
         public bool Contains(int r, int c)
         {
-            foreach(var rect in _rects)
+            foreach (var rect in _rects)
             {
-                if (rect.Contains(r,c) == true)
+                if (rect.Contains(r, c) == true)
                     return true;
             }
             return false;
@@ -231,7 +177,7 @@ namespace minorlife
             {
                 return false;
             }
-            
+
             foreach (var room in _rects)
             {
                 if (room.HasIntersection(otherRect) == true)
@@ -276,12 +222,14 @@ namespace minorlife
         {
             return a.CalculateManhattanDistance(b);
         }
-        public static bool CanMerge(Room a, Room b)
+        public static bool CanMerge(Room a, Room b, ref MergeDirection mergeDir)
         {
+            mergeDir = MergeDirection.None;
+
             Rect filter = a.RectFilter;
             filter.row = (a.RowMin == 0) ? 0 : filter.row - 1;
             filter.col = (a.ColMin == 0) ? 0 : filter.col - 1;
-            filter.width = (a.RowMin == 0) ? filter.width + 1 : filter.width + 2;;
+            filter.width = (a.RowMin == 0) ? filter.width + 1 : filter.width + 2; ;
             filter.height = (a.ColMin == 0) ? filter.height + 1 : filter.height + 2;
 
             //NOTE(용택): 한 칸을 키운 RectFilter 와 대상이 교차하는지 살펴본다. 이 과정에 실패하면 이미 걸러진다.
@@ -289,33 +237,48 @@ namespace minorlife
                 return false;
 
             //NOTE(용택): 한 칸을 키운 좌표들과 대상이 교차하는지 살펴본다. 4방향 전수좌표를 검사한다.
-            //TODO(용택): 오버헤드가 큰 지 측정 필요.
-            int   topRow     = (a.RowMin == 0) ? a.RowMin : a.RowMin - 1;
+            int topRow = (a.RowMin == 0) ? a.RowMin : a.RowMin - 1;
             int[] topColumns = a.GetColumns(a.RowMin);
-            for(int i = 0; i < topColumns.Length; ++i)
+            for (int i = 0; i < topColumns.Length; ++i)
             {
-                if (b.Contains(topRow, topColumns[i]) == true) return true;
+                if (b.Contains(topRow, topColumns[i]) == true)
+                {
+                    mergeDir = MergeDirection.Top;
+                    return true;
+                }
             }
 
-            int   bottomRow     = a.RowMax + 1;
+            int bottomRow = a.RowMax + 1;
             int[] bottomColumns = a.GetColumns(a.RowMax);
-            for(int i = 0; i < bottomColumns.Length; ++i)
+            for (int i = 0; i < bottomColumns.Length; ++i)
             {
-                if (b.Contains(bottomRow, bottomColumns[i]) == true) return true;
+                if (b.Contains(bottomRow, bottomColumns[i]) == true)
+                {
+                    mergeDir = MergeDirection.Bottom;
+                    return true;
+                }
             }
 
-            int   leftColumn = (a.ColMin == 0) ? a.ColMin : a.ColMin - 1;
-            int[] leftRows   = a.GetRows(a.ColMin);
-            for(int i = 0; i < leftRows.Length; ++i)
+            int leftColumn = (a.ColMin == 0) ? a.ColMin : a.ColMin - 1;
+            int[] leftRows = a.GetRows(a.ColMin);
+            for (int i = 0; i < leftRows.Length; ++i)
             {
-                if (b.Contains(leftRows[i], leftColumn) == true) return true;
+                if (b.Contains(leftRows[i], leftColumn) == true)
+                {
+                    mergeDir = MergeDirection.Left;
+                    return true;
+                }
             }
 
-            int   rightColumn = a.ColMax + 1;
-            int[] rightRows   = a.GetRows(a.ColMax);
-            for(int i = 0; i < rightRows.Length; ++i)
+            int rightColumn = a.ColMax + 1;
+            int[] rightRows = a.GetRows(a.ColMax);
+            for (int i = 0; i < rightRows.Length; ++i)
             {
-                if (b.Contains(rightRows[i], rightColumn) == true) return true;
+                if (b.Contains(rightRows[i], rightColumn) == true)
+                {
+                    mergeDir = MergeDirection.Right;
+                    return true;
+                }
             }
 
             return false;
@@ -340,5 +303,137 @@ namespace minorlife
         {
             return Id == other.Id;
         }
-    }   
+
+        public List<Coord> GetHullCoords(Map.Tile[,] tileMap)
+        {
+            HashSet<Coord> samplingCoordsSet = new HashSet<Coord>();
+            samplingCoordsSet.UnionWith(GetTopCoords());
+            samplingCoordsSet.UnionWith(GetBottomCoords());
+            samplingCoordsSet.UnionWith(GetLeftCoords());
+            samplingCoordsSet.UnionWith(GetRightCoords());
+
+            List<Coord> hullCoords = new List<Coord>(samplingCoordsSet.Count);
+
+            //  HashSet 중 edge 에 해당하는 좌표만 모은다.
+            //      edge 에 해당하는지는 어떻게 아는가?
+            //      row == 0 이거나 col == 0 인 경우 edge 이다.
+            //      vectorTable 에 돌린 경우 empty 에 인접하는 좌표면 edge 이다.
+            //  모아서 리턴
+
+            Coord[] sampleVectors = new Coord[8];
+            //  0   1   2
+            //  3 smplP 4
+            //  5   6   7
+            sampleVectors[0].row = -1; sampleVectors[0].col = -1;
+            sampleVectors[1].row = -1; sampleVectors[1].col = 0;
+            sampleVectors[2].row = -1; sampleVectors[2].col = +1;
+            sampleVectors[3].row = 0; sampleVectors[3].col = -1;
+            sampleVectors[4].row = 0; sampleVectors[4].col = +1;
+            sampleVectors[5].row = +1; sampleVectors[5].col = -1;
+            sampleVectors[6].row = +1; sampleVectors[6].col = 0;
+            sampleVectors[7].row = +1; sampleVectors[7].col = +1;
+
+            System.Console.WriteLine(tileMap[7, 18]);
+
+            foreach (var sample in samplingCoordsSet)
+            {
+                if (sample.row == 8 && sample.col == 19)
+                {
+                    System.Console.WriteLine("break;");
+                }
+                if (sample.row == 0 || sample.col == 0)
+                {
+                    hullCoords.Add(sample);
+                }
+                else
+                {
+                    foreach (var v in sampleVectors)
+                    {
+                        Coord samplePoint = sample;
+                        samplePoint.row += v.row;
+                        samplePoint.col += v.col;
+
+                        if (tileMap[samplePoint.row, samplePoint.col] == Map.Tile.Empty)
+                        {
+                            var tile_v = tileMap[samplePoint.row, samplePoint.col];
+                            //System.Console.WriteLine(tile_v);
+                            hullCoords.Add(sample);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            return hullCoords;
+        }
+
+        private HashSet<Coord> GetTopCoords()
+        {
+            var topCoordsSet = new HashSet<Coord>();
+            for (int i = 0; i < _rects.Count; ++i)
+            {
+                int minRow = _rects[i].RowMin;
+                int[] columns = _rects[i].GetColumns(minRow);
+                for (int j = 0; j < columns.Length; ++j)
+                {
+                    Coord coord;
+                    coord.row = minRow;
+                    coord.col = columns[j];
+                    topCoordsSet.Add(coord);
+                }
+            }
+            return topCoordsSet;
+        }
+        private HashSet<Coord> GetBottomCoords()
+        {
+            var bottomCoordsSet = new HashSet<Coord>();
+            for (int i = 0; i < _rects.Count; ++i)
+            {
+                int maxRow = _rects[i].RowMax;
+                int[] bottomColumns = _rects[i].GetColumns(maxRow);
+                for (int j = 0; j < bottomColumns.Length; ++j)
+                {
+                    Coord coord;
+                    coord.row = maxRow;
+                    coord.col = bottomColumns[j];
+                    bottomCoordsSet.Add(coord);
+                }
+            }
+            return bottomCoordsSet;
+        }
+        private HashSet<Coord> GetLeftCoords()
+        {
+            var leftCoordsSet = new HashSet<Coord>();
+            for (int i = 0; i < _rects.Count; ++i)
+            {
+                int minCol = _rects[i].ColMin;
+                int[] leftRows = _rects[i].GetRows(minCol);
+                for (int j = 0; j < leftRows.Length; ++j)
+                {
+                    Coord coord;
+                    coord.row = leftRows[j];
+                    coord.col = minCol;
+                    leftCoordsSet.Add(coord);
+                }
+            }
+            return leftCoordsSet;
+        }
+        private HashSet<Coord> GetRightCoords()
+        {
+            var rightCoordsSet = new HashSet<Coord>();
+            for (int i = 0; i < _rects.Count; ++i)
+            {
+                int maxCol = _rects[i].ColMax;
+                int[] rightRows = _rects[i].GetRows(maxCol);
+                for (int j = 0; j < rightRows.Length; ++j)
+                {
+                    Coord coord;
+                    coord.row = rightRows[j];
+                    coord.col = maxCol;
+                    rightCoordsSet.Add(coord);
+                }
+            }
+            return rightCoordsSet;
+        }
+    }
 }

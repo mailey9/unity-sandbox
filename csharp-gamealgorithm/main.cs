@@ -11,6 +11,7 @@ namespace minorlife
         static void Main(string[] args)
         {
             string runPath = AppDomain.CurrentDomain.BaseDirectory;
+            var mapGenConfig = new MapGenerateConfig();
 
             Stopwatch sw_genOnly = new Stopwatch();
             Stopwatch sw = new Stopwatch();
@@ -21,12 +22,8 @@ namespace minorlife
             {
                 sw_genOnly.Start();
 
-                var mapGenConfig = new MapGenerateConfig();
+                Map randomMap = new Map( MapGenerator.Generate(mapGenConfig) );
 
-                Map randomMap = new Map(mapGenConfig.width, mapGenConfig.height);
-                randomMap.Apply( MapGenerator.Generate(mapGenConfig) );
-                randomMap.DEBUG_Apply( MapGenerator.DEBUG_Corridors );
-                
                 sw_genOnly.Stop();
 
                 string filename = runPath + "RandGenMap_" + mapGenConfig.width + "x" + mapGenConfig.height + "_Level" + mapGenConfig.divideTreeLevel + "_" + i + ".txt";
@@ -34,7 +31,6 @@ namespace minorlife
             }
 
             sw.Stop();
-
             Console.WriteLine("TotalElapsed={0}, GenOnlyElapsed={1}", sw.Elapsed, sw_genOnly.Elapsed);
             //Console.ReadKey();
         }

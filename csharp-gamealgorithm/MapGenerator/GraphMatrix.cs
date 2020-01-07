@@ -76,5 +76,12 @@ namespace minorlife
         {
             return lookupTable[index];
         }
+    
+        public override string ToString()
+        {
+            int capa = LengthRow * LengthColumn;
+            System.Text.StringBuilder stringBuilder = new System.Text.StringBuilder(capa);
+            return stringBuilder.ToString();
+        }
     }
 }
