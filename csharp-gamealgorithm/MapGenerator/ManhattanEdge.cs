@@ -4,9 +4,9 @@ namespace minorlife
 {
     public class ManhattanEdge : IEquatable<ManhattanEdge>
     {
-        public int NodeA { get; private set;}
-        public int NodeB { get; private set;}
-        public int ManhattanDistance { get; private set;}
+        public int NodeA { get; private set; }
+        public int NodeB { get; private set; }
+        public int ManhattanDistance { get; private set; }
 
         public ManhattanEdge(int a, int b, int d)
         {
@@ -47,5 +47,5 @@ namespace minorlife
         {
             return a.ManhattanDistance.CompareTo(b.ManhattanDistance);
         };
-    } 
+    }
 }

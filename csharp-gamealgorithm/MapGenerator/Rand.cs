@@ -10,7 +10,7 @@ namespace minorlife
 
         public static float Range(float inclusiveMin, float inclusiveMax)
         {
-            return random.Next( (int)(inclusiveMin*100), (int)(inclusiveMax*100) ) / 100.0f;
+            return random.Next((int)(inclusiveMin * 100), (int)(inclusiveMax * 100)) / 100.0f;
         }
 
         public static int Range(int inclusiveMin, int exclusiveMax)

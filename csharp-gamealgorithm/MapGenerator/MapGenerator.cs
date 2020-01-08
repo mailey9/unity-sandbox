@@ -83,22 +83,35 @@ namespace minorlife
                 }
             }
 
-            GraphMatrix         completeGraphMatrix;
-            GraphMatrix         manhattanMSTMatrix;
+foreach (var room in rooms)
+{
+    List<Coord> horizontalCandidates;
+    List<Coord> verticalCandidates;
+    int samplingBreadth = config.corridorBreadth + 2;// +2 for sided Wall
+
+    bool rv = room.CalculateDoorCandidates(tileMap, samplingBreadth, out horizontalCandidates, out verticalCandidates);
+    System.Diagnostics.Debug.Assert(rv == true, "Possible LogicError. breadth too wide? OR filter is too small.");
+
+    foreach (var w in horizontalCandidates)
+        tileMap[w.row, w.col] = Map.Tile.RoomDoor;
+    foreach (var h in verticalCandidates)
+        tileMap[h.row, h.col] = Map.Tile.RoomDoor;
+}
+
+            GraphMatrix completeGraphMatrix;
+            GraphMatrix manhattanMSTMatrix;
             List<ManhattanEdge> mstEdges;
-            CreateRoomGraphs(rooms, out completeGraphMatrix, out manhattanMSTMatrix, out mstEdges);
             //TODO(용택): 길을 몇 개 추가해서 생성한다.
-            
-            //TODO(용택): MST 를 기반으로 Corridor 를 만든다.
-            //TODO(용택): 이미 있는 Corridor 와 좌표가 겹치는 경우에 대해 고려한다.
+            CreateRoomGraphs(rooms, out completeGraphMatrix, out manhattanMSTMatrix, out mstEdges);
+
             List<Corridor> corridors = CreateCorridors(tileMap, rooms, mstEdges);
             {
-                foreach(var corridor in corridors)
+                foreach (var corridor in corridors)
                 {
                     for (int i = 0; i < corridor.Count; ++i)
                     {
                         Coord coord = corridor.GetCoord(i);
-                        tileMap[coord.row, coord.col] = Map.Tile.Corridor;
+                        //tileMap[coord.row, coord.col] = Map.Tile.Corridor;
                     }
                 }
             }
@@ -121,41 +134,31 @@ namespace minorlife
 
             return generatedMap;
         }
-
+                
         private static List<Corridor> CreateCorridors(Map.Tile[,] tileMap, List<Room> rooms, List<ManhattanEdge> edges)
         {
             List<Corridor> corridors = new List<Corridor>(edges.Count);
 
             foreach (ManhattanEdge edge in edges)
             {
-                Coord from = Room.FindRoom(rooms, edge.NodeA).GetRandomRect().Center;
-                Coord to   = Room.FindRoom(rooms, edge.NodeB).GetRandomRect().Center;
+                Rect fromRect = new Rect();
+                Rect toRect = new Rect();
+                Coord actualDiff;
+                bool rv = Room.CalculateDetailManhattanDistance(rooms, edge.NodeA, edge.NodeB, ref fromRect, ref toRect, out actualDiff);
+                System.Diagnostics.Debug.Assert(rv == true, "Logic Error on CreateCorridors();, failed to Calculate Detail Manhattan Distance.");
+
+                Coord from = fromRect.Center;
+                Coord to = toRect.Center;
 
                 Coord vectorDiff = to - from;
                 vectorDiff.row = (vectorDiff.row == 0) ? 0 : vectorDiff.row / Math.Abs(vectorDiff.row);
                 vectorDiff.col = (vectorDiff.col == 0) ? 0 : vectorDiff.col / Math.Abs(vectorDiff.col);
 
-                int numSamples = Coord.CalculateManhattanDistance(from, to) + 1;
+                int numSamples = Math.Abs(actualDiff.row) + Math.Abs(actualDiff.col);
                 List<Coord> coords = new List<Coord>(numSamples);
 
                 //TODO(용택): (Corridor Creating :: Fill) 정말 랜덤이 답이냐?
                 //          일정횟수가 넘어가면 단위만큼 변곡시키도록 강제하는 방법은 있겠다.
-                for (int i = 0; i < numSamples; ++i)
-                {
-                //    int mode = Rand.Range(0, 1);
-                //    mode = 10;
-                //    //전진하면서 sample 해본다.
-                //    //  row 방향으로 갈 때는
-
-
-                    //  개수만큼 샘플링하면서 전진한다.
-                    //      row 방향으로 갈 때는 width (좌, 우)를 sampling 한다.
-                    //      col 방향으로 갈 때는 height (상, 하)를 sampling 한다.
-                    //  3/2 = 1, 2/2 = 1, 4/2 = 2, 5/2 = 2, 6/2 = 3
-                    //   /2 = 0,  /2 = 0,  /2 = 1,  /2 = 1,  /2 = 1
-                    //  3%2 = 1, 2%2 = 0, 4%2 = 0, 5%2 = 1, 6%2 = 0
-                }
-
                 int fillMode = Rand.Range(0,0);
                 switch (fillMode)
                 {
@@ -197,6 +200,7 @@ namespace minorlife
 
             return corridors;
         }
+                
         private static void CreateRoomGraphs(List<Room> rooms, out GraphMatrix completeGraphMatrix, out GraphMatrix manhattanMSTMatrix, out List<ManhattanEdge> mstEdges)
         {
             completeGraphMatrix = new GraphMatrix();
@@ -230,7 +234,7 @@ namespace minorlife
                     }
                     else
                     {
-                        int distance = rooms[r].CalculateManhattanDistance(rooms[c]);
+                        int distance = rooms[r].CalculateRoughManhattanDistance(rooms[c]);
                         manhattanEdges.Add( new ManhattanEdge(rooms[r].Id, rooms[c].Id, distance) );
 
                         completeGraphMatrix.graphMatrix[r, c] = distance;
@@ -451,8 +455,7 @@ namespace minorlife
                         continue;
                     }
 
-                    Room.MergeDirection mergeDirection = new Room.MergeDirection();
-                    if (Room.CanMerge(rooms[a],rooms[b], ref mergeDirection) == true)
+                    if (Room.CanMerge(rooms[a], rooms[b]) == true)
                     {
                         rooms[a].Append(rooms[b]);
                         rooms.Remove(rooms[b]);

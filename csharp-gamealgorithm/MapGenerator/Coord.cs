@@ -78,5 +78,13 @@ namespace minorlife
             else
                 return a.col.CompareTo(b.col);
         };
+        public static Comparison<Coord> ColumnRowComparison = delegate (Coord a, Coord b)
+        {
+            int columnCompare = a.col.CompareTo(b.col);
+            if (columnCompare != 0)
+                return columnCompare;
+            else
+                return a.row.CompareTo(b.row);
+        };
     }
 }

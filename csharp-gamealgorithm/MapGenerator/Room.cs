@@ -5,11 +5,6 @@ namespace minorlife
 {
     public class Room : IEquatable<Room>
     {
-        public enum MergeDirection
-        {
-            None, Top, Bottom, Left, Right
-        }
-
         #region Properties: Coord Utilities
         public int RowMin
         {
@@ -107,10 +102,7 @@ namespace minorlife
         public void Append(Rect rect)
         {
             _rects.Add(rect);
-            _rects.Sort(Rect.RowColumnWidthHeightComparison);
-
-            //TODO(용택): (Concave Hull) Rect 가 추가될 때마다 좌표를 계산해두도록 한다.
-            //NOTE(용택): (Concave Hull) 다소 무겁지만 미리해둔다.
+            //_rects.Sort(Rect.RowColumnWidthHeightComparison);
         }
         public void Append(Room room)
         {
@@ -213,19 +205,51 @@ namespace minorlife
             return a.HasIntersection(b);
         }
 
-        public int CalculateManhattanDistance(Room other)
+        public int CalculateRoughManhattanDistance(Room other)
         {
             Coord diff = RectFilter.Center - other.RectFilter.Center;
             return Math.Abs(diff.row) + Math.Abs(diff.col);
         }
-        public static int CalculateManhattanDistance(Room a, Room b)
+        public static int CalculateRoughManhattanDistance(Room a, Room b)
         {
-            return a.CalculateManhattanDistance(b);
+            return a.CalculateRoughManhattanDistance(b);
         }
-        public static bool CanMerge(Room a, Room b, ref MergeDirection mergeDir)
+        public static bool CalculateDetailManhattanDistance(List<Room> rooms, int srcRoomId, int destRoomId, ref Rect srcRect, ref Rect destRect, out Coord diff)
         {
-            mergeDir = MergeDirection.None;
+            diff.row = diff.col = int.MaxValue / 2;
+            //srcRect.row = srcRect.col = srcRect.width = srcRect.height = int.MaxValue;
+            //destRect.row = destRect.col = destRect.width = destRect.height = int.MaxValue;
 
+            Room srcRoom = FindRoom(rooms, srcRoomId);
+            Room destRoom= FindRoom(rooms, destRoomId);
+
+            foreach (var a in srcRoom._rects)
+            {
+                foreach (var b in destRoom._rects)
+                {
+                    Coord result = b.Center - a.Center;
+
+                    int sumOfDiff = Math.Abs(diff.row) + Math.Abs(diff.col);
+                    int sumOfResult = Math.Abs(result.row) + Math.Abs(result.col);
+                    int minSum = Math.Min(sumOfDiff, sumOfResult);
+
+                    if (minSum == sumOfResult)
+                    {
+                        diff.row = Math.Abs(result.row);
+                        diff.col = Math.Abs(result.col);
+                        srcRect = a;
+                        destRect = b;
+                    }
+                }
+            }
+
+            if (diff.row == int.MaxValue/2 || diff.col == int.MaxValue/2)
+                return false;
+            else
+                return true;
+        }
+        public static bool CanMerge(Room a, Room b)
+        {
             Rect filter = a.RectFilter;
             filter.row = (a.RowMin == 0) ? 0 : filter.row - 1;
             filter.col = (a.ColMin == 0) ? 0 : filter.col - 1;
@@ -243,7 +267,6 @@ namespace minorlife
             {
                 if (b.Contains(topRow, topColumns[i]) == true)
                 {
-                    mergeDir = MergeDirection.Top;
                     return true;
                 }
             }
@@ -254,7 +277,6 @@ namespace minorlife
             {
                 if (b.Contains(bottomRow, bottomColumns[i]) == true)
                 {
-                    mergeDir = MergeDirection.Bottom;
                     return true;
                 }
             }
@@ -265,7 +287,6 @@ namespace minorlife
             {
                 if (b.Contains(leftRows[i], leftColumn) == true)
                 {
-                    mergeDir = MergeDirection.Left;
                     return true;
                 }
             }
@@ -276,7 +297,6 @@ namespace minorlife
             {
                 if (b.Contains(rightRows[i], rightColumn) == true)
                 {
-                    mergeDir = MergeDirection.Right;
                     return true;
                 }
             }
@@ -314,12 +334,6 @@ namespace minorlife
 
             List<Coord> hullCoords = new List<Coord>(samplingCoordsSet.Count);
 
-            //  HashSet 중 edge 에 해당하는 좌표만 모은다.
-            //      edge 에 해당하는지는 어떻게 아는가?
-            //      row == 0 이거나 col == 0 인 경우 edge 이다.
-            //      vectorTable 에 돌린 경우 empty 에 인접하는 좌표면 edge 이다.
-            //  모아서 리턴
-
             Coord[] sampleVectors = new Coord[8];
             //  0   1   2
             //  3 smplP 4
@@ -333,15 +347,11 @@ namespace minorlife
             sampleVectors[6].row = +1; sampleVectors[6].col = 0;
             sampleVectors[7].row = +1; sampleVectors[7].col = +1;
 
-            System.Console.WriteLine(tileMap[7, 18]);
-
+            int tilemapRowMax = tileMap.GetLength(0);
+            int tilemapColumnMax = tileMap.GetLength(1);
             foreach (var sample in samplingCoordsSet)
             {
-                if (sample.row == 8 && sample.col == 19)
-                {
-                    System.Console.WriteLine("break;");
-                }
-                if (sample.row == 0 || sample.col == 0)
+                if (sample.row == 0 || sample.col == 0 || sample.row == tilemapRowMax || sample.col == tilemapColumnMax)
                 {
                     hullCoords.Add(sample);
                 }
@@ -355,18 +365,15 @@ namespace minorlife
 
                         if (tileMap[samplePoint.row, samplePoint.col] == Map.Tile.Empty)
                         {
-                            var tile_v = tileMap[samplePoint.row, samplePoint.col];
-                            //System.Console.WriteLine(tile_v);
                             hullCoords.Add(sample);
                             break;
                         }
                     }
-                }
+                }//if (samplePt is boundary) or (not)
             }
 
             return hullCoords;
         }
-
         private HashSet<Coord> GetTopCoords()
         {
             var topCoordsSet = new HashSet<Coord>();
@@ -434,6 +441,60 @@ namespace minorlife
                 }
             }
             return rightCoordsSet;
+        }
+        public bool CalculateDoorCandidates(Map.Tile[,] tileMap, int reservedBreadth, out List<Coord> columnCandidates, out List<Coord> rowCandidates)
+        {
+            List<Coord> hulls = GetHullCoords(tileMap);
+
+            columnCandidates = new List<Coord>(hulls.Count);
+            rowCandidates = new List<Coord>(hulls.Count);
+
+            //NOTE(용택): w, h 만큼의 RoomWall 이 존재하는지 Sample 한다.
+            bool SampleColumns(Coord coord, int w)
+            {
+                int positiveOffset = w / 2;
+                int negativeOffset = -1 * (w - positiveOffset - 1);
+                for (int i = negativeOffset; i <= positiveOffset; ++i)
+                {
+                    //TODO(용택): narrow height 를 가진 틈은 candidate 가 되어서는 안된다.
+                    if (coord.col + i < 0)
+                        return false;
+                    if (coord.col + i >= tileMap.GetLength(1))
+                        return false;
+                    if (tileMap[coord.row, coord.col + i] != Map.Tile.RoomWall)
+                        return false;
+                }
+                return true;
+            }
+            bool SampleRows(Coord coord, int h)
+            {
+                int positiveOffset = h / 2;
+                int negativeOffset = -1 * (h - positiveOffset - 1);
+                for (int i = negativeOffset; i <= positiveOffset; ++i)
+                {
+                    //TODO(용택): narrow width 를 가진 틈은 candidate 가 되어서는 안된다.
+                    if (coord.row + i < 0)
+                        return false;
+                    if (coord.row + i >= tileMap.GetLength(0))
+                        return false;
+                    if (tileMap[coord.row + i, coord.col] != Map.Tile.RoomWall)
+                        return false;
+                }
+                return true;
+            }
+
+            foreach (Coord coord in hulls)
+            {
+                if (SampleColumns(coord, reservedBreadth) == true)
+                    columnCandidates.Add(coord);
+                if (SampleRows(coord, reservedBreadth) == true)
+                    rowCandidates.Add(coord);
+            }
+
+            if (columnCandidates.Count == 0 && rowCandidates.Count == 0)
+                return false;
+            else
+                return true;
         }
     }
 }

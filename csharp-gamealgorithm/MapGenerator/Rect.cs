@@ -10,17 +10,17 @@ namespace minorlife
         public int height;
 
         #region Coord Utility Properties
-        public int RowMin { get{ return row; } }
-        public int RowMax { get{ return row+height-1; } } 
-        public int ColMin { get{ return col; } }
-        public int ColMax { get{ return col+width-1; } }
+        public int RowMin { get { return row; } }
+        public int RowMax { get { return row + height - 1; } }
+        public int ColMin { get { return col; } }
+        public int ColMax { get { return col + width - 1; } }
         public Coord TopLeft
         {
             get
             {
                 Coord coord;
-                coord.row=RowMin;
-                coord.col=ColMin;
+                coord.row = RowMin;
+                coord.col = ColMin;
                 return coord;
             }
         }
@@ -29,8 +29,8 @@ namespace minorlife
             get
             {
                 Coord coord;
-                coord.row=RowMax;
-                coord.col=ColMax;
+                coord.row = RowMax;
+                coord.col = ColMax;
                 return coord;
             }
         }
@@ -39,8 +39,8 @@ namespace minorlife
             get
             {
                 Coord coord;
-                coord.row=RowMin;
-                coord.col=ColMax;
+                coord.row = RowMin;
+                coord.col = ColMax;
                 return coord;
             }
         }
@@ -49,8 +49,8 @@ namespace minorlife
             get
             {
                 Coord coord;
-                coord.row=RowMax;
-                coord.col=ColMin;
+                coord.row = RowMax;
+                coord.col = ColMin;
                 return coord;
             }
         }
@@ -59,13 +59,13 @@ namespace minorlife
             get
             {
                 Coord coord;
-                coord.row = (int)( (row + row+height-1) * 0.5 );
-                coord.col = (int)( (col + col+width-1) * 0.5 );
+                coord.row = (int)((row + row + height - 1) * 0.5);
+                coord.col = (int)((col + col + width - 1) * 0.5);
                 return coord;
             }
         }
         #endregion//Coord Utility Properties
-        
+
         public int[] GetColumns(int row)
         {
             int[] columns = null;
@@ -112,7 +112,7 @@ namespace minorlife
             }
             else
             {
-                return false;    
+                return false;
             }
         }
         public static bool HasIntersection(Rect a, Rect b)
@@ -178,11 +178,11 @@ namespace minorlife
             else
                 return true;
         }
-        public static bool operator==(Rect a, Rect b)
+        public static bool operator ==(Rect a, Rect b)
         {
             return a.Equals(b);
         }
-        public static bool operator!=(Rect a, Rect b)
+        public static bool operator !=(Rect a, Rect b)
         {
             return !a.Equals(b);
         }
