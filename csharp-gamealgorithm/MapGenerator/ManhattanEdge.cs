@@ -4,11 +4,11 @@ namespace minorlife
 {
     public class ManhattanEdge : IEquatable<ManhattanEdge>
     {
-        public int NodeA { get; private set;}
-        public int NodeB { get; private set;}
-        public int ManhattanDistance { get; private set;}
+        public UInt64 NodeA { get; private set; }
+        public UInt64 NodeB { get; private set; }
+        public int ManhattanDistance { get; private set; }
 
-        public ManhattanEdge(int a, int b, int d)
+        public ManhattanEdge(UInt64 a, UInt64 b, int d)
         {
             NodeA = a;
             NodeB = b;
@@ -17,8 +17,7 @@ namespace minorlife
 
         public override int GetHashCode()
         {
-            //return NodeA.GetHashCode() + NodeB.GetHashCode();
-            return 42 * NodeA + 2020 * NodeB;
+            return (NodeA ^ NodeB).GetHashCode();
         }
         public override bool Equals(object obj)
         {
@@ -47,5 +46,5 @@ namespace minorlife
         {
             return a.ManhattanDistance.CompareTo(b.ManhattanDistance);
         };
-    } 
+    }
 }

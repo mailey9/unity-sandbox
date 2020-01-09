@@ -7,15 +7,15 @@ namespace minorlife
         public int Id { get; private set; }
         public int Count { get { return _coords.Count; } }
         private static int _id = 0;
-        List<Coord> _coords = null;
+        List<Point> _coords = null;
 
-        public Corridor(List<Coord> coords)
+        public Corridor(List<Point> coords)
         {
             Id = _id++;
             _coords = coords;
         }
 
-        public Coord GetCoord(int i)
+        public Point GetPoint(int i)
         {
             return _coords[i];
         }

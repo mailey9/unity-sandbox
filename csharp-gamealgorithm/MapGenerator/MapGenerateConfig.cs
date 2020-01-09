@@ -20,9 +20,11 @@ namespace minorlife
         //TODO(용택): 가로-세로 비율이 편향된 모양을 버린다.
         //discardLessThanWidthHeightRatio = 0.40f;
 
+        public int corridorBreadth = 3;
+
         public override string ToString()
         {
-            int capa = 20 * 10 + 10;
+            int capa = 20 * 11 + 11;
             StringBuilder stringBuilder = new StringBuilder(capa);
 
             stringBuilder.Append("Width: " + width + "\n");
@@ -35,6 +37,7 @@ namespace minorlife
             stringBuilder.Append("Rect Fill Ratio Max: " + rectFillRatioMax + "\n");
             stringBuilder.Append("Discard Less Than Width: " + discardLessThanWidth + "\n");
             stringBuilder.Append("Discard Less Than Height: " + discardLessThanHeight + "\n");
+            stringBuilder.Append("Corridor Breadth: " + corridorBreadth + "\n");
 
             return stringBuilder.ToString();
         }

@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 
 namespace minorlife
 {
@@ -8,10 +7,10 @@ namespace minorlife
         public int LengthRow { get { return graphMatrix.GetLength(0); } }
         public int LengthColumn { get { return graphMatrix.GetLength(0); } }
 
-        public int[]  lookupTable = null;
+        public UInt64[]  lookupTable = null;
         public int[,] graphMatrix = null;
 
-        public bool GetShortestNode(int nodeFrom, out int? nodeTo, out int? cost)
+        public bool GetShortestNode(UInt64 nodeFrom, out UInt64? nodeTo, out int? cost)
         {
             int indexFrom = GetIndexOf(nodeFrom);
             int indexTo = -1;
@@ -42,11 +41,11 @@ namespace minorlife
             nodeTo = null;
             return false;
         }
-        public bool HasPath(int nodeA, int nodeB)
+        public bool HasPath(UInt64 nodeA, UInt64 nodeB)
         {
             return GetCost(nodeA, nodeB) == 0 ? false : true;
         }
-        public int GetCost(int nodeA, int nodeB)
+        public int GetCost(UInt64 nodeA, UInt64 nodeB)
         {
             int indexA = GetIndexOf(nodeA);
             int indexB = GetIndexOf(nodeB);
@@ -68,11 +67,11 @@ namespace minorlife
 
             return false;
         }
-        public int GetIndexOf(int id)
+        public int GetIndexOf(UInt64 id)
         {
             return Array.BinarySearch(lookupTable, id);
         }
-        public int GetNodeIdOf(int index)
+        public UInt64 GetNodeIdOf(int index)
         {
             return lookupTable[index];
         }

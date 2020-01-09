@@ -1,6 +1,5 @@
-using System;
-using System.Text;
 using System.Collections.Generic;
+using System.Text;
 
 namespace minorlife
 {
@@ -11,7 +10,8 @@ namespace minorlife
             Empty   = 0,
             Room    = 1,
             RoomWall= 2,
-            Corridor= 3
+            RoomDoor= 3,
+            Corridor= 4
         }
 
         public struct GeneratedMap
@@ -46,10 +46,11 @@ namespace minorlife
                 {
                     switch (MapData.tileMap[r,c])
                     {
-                        case Tile.Empty:    stringBuilder.Append( ". " ); break;
-                        case Tile.Room:     stringBuilder.Append( "  " ); break;
-                        case Tile.RoomWall: stringBuilder.Append( "XX" ); break;
-                        case Tile.Corridor: stringBuilder.Append( "_ " ); break;
+                        case Tile.Empty:    stringBuilder.Append( "." ); break;
+                        case Tile.Room:     stringBuilder.Append( " " ); break;
+                        case Tile.RoomWall: stringBuilder.Append( "X" ); break;
+                        case Tile.RoomDoor: stringBuilder.Append( "d" ); break;
+                        case Tile.Corridor: stringBuilder.Append( "_" ); break;
                     }
                 }
                 stringBuilder.Append("\n");
