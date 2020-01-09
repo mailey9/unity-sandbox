@@ -5,7 +5,7 @@ namespace minorlife
 {
     public static class Rand
     {
-        const int RANDOM_SEED = 42;
+        const int RANDOM_SEED = 1988 - 4 - 15 + 1;
         static System.Random random = new System.Random(RANDOM_SEED);
 
         public static float Range(float inclusiveMin, float inclusiveMax)

@@ -17,7 +17,7 @@ namespace minorlife
             Stopwatch sw = new Stopwatch();
             sw.Start();
 
-            int runCount = 1;
+            int runCount = 100000;
             for (int i = 0; i < runCount; ++i)
             {
                 sw_genOnly.Start();

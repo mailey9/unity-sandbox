@@ -46,11 +46,11 @@ namespace minorlife
                 {
                     switch (MapData.tileMap[r,c])
                     {
-                        case Tile.Empty:    stringBuilder.Append( ". " ); break;
-                        case Tile.Room:     stringBuilder.Append( "  " ); break;
-                        case Tile.RoomWall: stringBuilder.Append( "XX" ); break;
-                        case Tile.RoomDoor: stringBuilder.Append("d "); break;
-                        case Tile.Corridor: stringBuilder.Append( "_ " ); break;
+                        case Tile.Empty:    stringBuilder.Append( "." ); break;
+                        case Tile.Room:     stringBuilder.Append( " " ); break;
+                        case Tile.RoomWall: stringBuilder.Append( "X" ); break;
+                        case Tile.RoomDoor: stringBuilder.Append( "d" ); break;
+                        case Tile.Corridor: stringBuilder.Append( "_" ); break;
                     }
                 }
                 stringBuilder.Append("\n");
