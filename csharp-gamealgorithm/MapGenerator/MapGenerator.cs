@@ -23,16 +23,15 @@ namespace minorlife
         static int DEBUG_generateRunCount = 0;
         static public Map.GeneratedMap Generate(MapGenerateConfig config)
         {
-            Map.Tile[,] tilemap = Create2DTileArray(config.width, config.height);
+            Map.eTile[,] tilemap = CreateTileArray2D(config.width, config.height);
 
-            List<Rect> dividedRects = CreateBSPTree(config.width, config.height,
-                                                    config.divideTreeLevel,
-                                                    config.divideRatioMin, config.divideRatioMax);
-            dividedRects = DiscardExceptLeafNodes(dividedRects, config.divideTreeLevel);
+            List<Rect> bspTree = CreateBSPTree(config.width, config.height,
+                                               config.divideTreeLevel,
+                                               config.divideRatioMin, config.divideRatioMax);
+            List<Rect> bspLeaves = GetLeafNodes(bspTree, config.divideTreeLevel);
 
-            List<Room> rooms = CreateRooms(dividedRects,
-                                           config.rectFillCount,
-                                           config.rectFillRatioMin, config.rectFillRatioMax,
+            List<Room> rooms = CreateRooms(bspLeaves,
+                                           config.rectFillCount, config.rectFillRatioMin, config.rectFillRatioMax,
                                            config.discardLessThanWidth, config.discardLessThanHeight);
 
             //NOTE(용택): 좌표상 겹치는 공간은 하나의 방으로 취급하도록 합친다.
@@ -50,6 +49,24 @@ namespace minorlife
 
             tilemap = ApplyRooms(tilemap, rooms);
             tilemap = ApplyRoomWalls(tilemap, rooms);
+
+            
+            {//teststart
+                var corridors = CreateCorridors(tilemap, rooms, 5);
+                foreach (var c in corridors)
+                {
+                    tilemap[c.DoorPointA.y, c.DoorPointA.x] = Map.eTile.RoomDoor;
+                    tilemap[c.DoorPointB.y, c.DoorPointB.x] = Map.eTile.RoomDoor;
+                    foreach (var c_way in c.GetCorridorPoints())
+                    {
+                        tilemap[c_way.y, c_way.x] = Map.eTile.Corridor;
+                    }
+                    foreach (var c_walls in c.GetWallPoints())
+                    {
+                        tilemap[c_walls.y, c_walls.x] = Map.eTile.CorridorWall;
+                    }
+                }
+            }//testend
 
             //GraphMatrix completeGraphMatrix;
             //GraphMatrix manhattanMSTMatrix;
@@ -77,85 +94,15 @@ namespace minorlife
         }
 
         [Obsolete]
-        private static List<Corridor> CreateCorridors(Map.Tile[,] tileMap, List<Room> rooms, List<ManhattanEdge> edges)
-        {
-            List<Corridor> corridors = new List<Corridor>(edges.Count);
-
-            foreach (ManhattanEdge edge in edges)
-            {
-                Room fromRoom = Room.FindRoom(rooms, edge.NodeA);
-                Room toRoom = Room.FindRoom(rooms, edge.NodeB);
-
-                Rect fromRect;
-                Rect toRect;
-                Point actualDiff;
-
-                bool rv = Room.CalculateDetailManhattanDistance(fromRoom, toRoom, out fromRect, out toRect, out actualDiff);
-                System.Diagnostics.Debug.Assert(rv == true, "Logic Error on CreateCorridors();, failed to Calculate Detail Manhattan Distance.");
-
-                Point from = fromRect.Center;
-                Point to = toRect.Center;
-
-                Point vectorDiff = to - from;
-                vectorDiff.y = (vectorDiff.y == 0) ? 0 : vectorDiff.y / Math.Abs(vectorDiff.y);
-                vectorDiff.x = (vectorDiff.x == 0) ? 0 : vectorDiff.x / Math.Abs(vectorDiff.x);
-
-                int numSamples = Math.Abs(actualDiff.y) + Math.Abs(actualDiff.x);
-                List<Point> coords = new List<Point>(numSamples);
-
-                //TODO(용택): (Corridor Creating :: Fill) 정말 랜덤이 답이냐?
-                //          일정횟수가 넘어가면 단위만큼 변곡시키도록 강제하는 방법은 있겠다.
-                int fillMode = Rand.Range(0,0);
-                switch (fillMode)
-                {
-                    case 0://Row First Filling
-                        {
-                            Point insertingPoint = from;
-                            coords.Add(insertingPoint);
-                            while (insertingPoint.y != to.y)
-                            {
-                                insertingPoint.y += vectorDiff.y;
-                                coords.Add(insertingPoint);
-                            }
-                            while (insertingPoint.x != to.x)
-                            {
-                                insertingPoint.x += vectorDiff.x;
-                                coords.Add(insertingPoint);
-                            }
-                        }
-                        break;
-                    case 1://Column First Filling
-                        {
-                            Point insertingPoint = from;
-                            coords.Add(insertingPoint);
-                            while (insertingPoint.x != to.x)
-                            {
-                                insertingPoint.x += vectorDiff.x;
-                                coords.Add(insertingPoint);
-                            }
-                            while (insertingPoint.y != to.y)
-                            {
-                                insertingPoint.y += vectorDiff.y;
-                                coords.Add(insertingPoint);
-                            }
-                        }
-                        break;
-                }//switch-case
-                corridors.Add(new Corridor(coords));
-            }
-
-            return corridors;
-        }
-                
         private static void CreateRoomGraphs(List<Room> rooms, out GraphMatrix completeGraphMatrix, out GraphMatrix manhattanMSTMatrix, out List<ManhattanEdge> mstEdges)
         {
             completeGraphMatrix = new GraphMatrix();
             manhattanMSTMatrix  = new GraphMatrix();
 
             //NOTE(용택): 룩업테이블
-            UInt64[] lookupTable = new UInt64[rooms.Count];
-            completeGraphMatrix.lookupTable = new UInt64[rooms.Count];
-            manhattanMSTMatrix.lookupTable = new UInt64[rooms.Count];
+            ulong[] lookupTable = new ulong[rooms.Count];
+            completeGraphMatrix.lookupTable = new ulong[rooms.Count];
+            manhattanMSTMatrix.lookupTable = new ulong[rooms.Count];
 
             for (int i = 0; i < lookupTable.Length; ++i)
             {
@@ -191,7 +138,7 @@ namespace minorlife
 
             manhattanEdges.Sort(ManhattanEdge.DistanceComparison);
 
-            UInt64[] unionFind = lookupTable;//NOTE(용택): 위에서 이미 각 Matrix 에 복사해두었으니 그대로 쓴다.
+            ulong[] unionFind = lookupTable;//NOTE(용택): 위에서 이미 각 Matrix 에 복사해두었으니 그대로 쓴다.
             int desiredEdgeCount = rooms.Count - 1;
             mstEdges = new List<ManhattanEdge>(desiredEdgeCount);
 
@@ -217,7 +164,7 @@ namespace minorlife
                         manhattanMSTMatrix.graphMatrix[indexOfA, indexOfB] = shortestEdge.ManhattanDistance;
                         manhattanMSTMatrix.graphMatrix[indexOfB, indexOfA] = shortestEdge.ManhattanDistance;
 
-                        UInt64 unionFrom = unionFind[indexA];
+                        ulong unionFrom = unionFind[indexA];
                         for (int i = 0; i < unionFind.Length; ++i)
                         {
                             if (unionFind[i] == unionFrom)
@@ -232,20 +179,20 @@ namespace minorlife
             System.Diagnostics.Debug.Assert(manhattanMSTMatrix.ContainsIsolateNode() == false, "Contains Isolate Node");
         }
 
-        static private Map.Tile[,] Create2DTileArray(int width, int height)
+        static private Map.eTile[,] CreateTileArray2D(int width, int height)
         {
-            Map.Tile[,] array2d = new Map.Tile[height, width];
+            Map.eTile[,] array2d = new Map.eTile[height, width];
             for (int r = 0; r < height; ++r)
             {
                 for (int c = 0; c < width; ++c)
                 {
-                    array2d[r,c] = Map.Tile.Empty;
+                    array2d[r,c] = Map.eTile.Empty;
                 }
             }
             return array2d;
         }
 
-        static private Map.Tile[,] ApplyRooms(Map.Tile[,] tilemap, List<Room> rooms)
+        static private Map.eTile[,] ApplyRooms(Map.eTile[,] tilemap, List<Room> rooms)
         {
             foreach (Room room in rooms)
             {
@@ -255,19 +202,19 @@ namespace minorlife
                     for (int y = rc.yMin; y <= rc.yMax; ++y)
                     {
                         for (int x = rc.xMin; x <= rc.xMax; ++x)
-                            tilemap[y, x] = Map.Tile.Room;
+                            tilemap[y, x] = Map.eTile.Room;
                     }
                 }
             }
             return tilemap;
         }
-        static private Map.Tile[,] ApplyRoomWalls(Map.Tile[,] tilemap, List<Room> rooms)
+        static private Map.eTile[,] ApplyRoomWalls(Map.eTile[,] tilemap, List<Room> rooms)
         {
             foreach (Room room in rooms)
             {
                 List<Point> roomHullPoints = room.GetHullPoints(tilemap);
                 foreach (Point pt in roomHullPoints)
-                    tilemap[pt.y, pt.x] = Map.Tile.RoomWall;
+                    tilemap[pt.y, pt.x] = Map.eTile.RoomWall;
             }
             return tilemap;
         }

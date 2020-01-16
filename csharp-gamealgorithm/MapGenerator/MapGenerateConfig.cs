@@ -8,12 +8,12 @@ namespace minorlife
         public int height = 200;
 
         public int divideTreeLevel = 5;
-        public float divideRatioMin = 0.40f;
+        public float divideRatioMin = 0.35f;
         public float divideRatioMax = 0.50f;
 
         public int rectFillCount = 3;
         public float rectFillRatioMin = 0.35f;
-        public float rectFillRatioMax = 0.70f;
+        public float rectFillRatioMax = 0.80f;
 
         public int discardLessThanWidth = 5;
         public int discardLessThanHeight = 5;

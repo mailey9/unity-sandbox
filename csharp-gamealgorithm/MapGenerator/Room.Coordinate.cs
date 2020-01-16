@@ -48,20 +48,20 @@ namespace minorlife
 
         public Rect Filter
         {
-            //NOTE(¿ëÅÃ): RoomÀÇ ´ë·«ÀûÀÎ Rect¸¸ ¹İÈ¯ÇÑ´Ù.
+            //NOTE(ìš©íƒ): Room ì¤‘ Rect ì˜ ëŒ€ëµì  í•„í„°ë¡œ í™œìš©í•œë‹¤.
             //      RRRRRR          FFFFFFFFFFF
             //      RRRRRRRRRRR     F         F
             //         RRRRRRRR     F         F
-            //         RRRRRRRR     FFFFFFFFFFF //ÀÌ·±´À³¦
+            //         RRRRRRRR     FFFFFFFFFFF //ëŒ€ëµ ì´ëŸ°ëª¨ì–‘
             get
             {
                 return new Rect(xMin, yMin, xMax - xMin + 1, yMax - yMin + 1);
             }
         }
 
-        public List<Point> GetHullPoints(Map.Tile[,] roomtileAppliedMap)
+        public List<Point> GetHullPoints(Map.eTile[,] roomtileAppliedMap)
         {
-            //NOTE(¿ëÅÃ): map ¿¡ ÀÌ¹Ì Map.Tile.Room µéÀÌ ¹İ¿µµÇ¾îÀÖ´Ù°í °¡Á¤ÇÑ´Ù.
+            //NOTE(ìš©íƒ): Roomì´ ë°˜ì˜ëœ ë§µì— ëŒ€ê³  ìƒ˜í”Œí•˜ì—¬ ê²°ê³¼ë¥¼ ë½‘ëŠ”ë‹¤.
 
             HashSet<Point> candidates = new HashSet<Point>();
             candidates.UnionWith(GetTopPoints());
@@ -97,7 +97,7 @@ namespace minorlife
                     foreach(Point lookupPt in lookupTable)
                     {
                         Point samplePt = pt + lookupPt;
-                        if (roomtileAppliedMap[samplePt.y, samplePt.x] == Map.Tile.Empty)
+                        if (roomtileAppliedMap[samplePt.y, samplePt.x] == Map.eTile.Empty)
                         {
                             hullPoints.Add(pt);
                             break;

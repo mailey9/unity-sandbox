@@ -63,7 +63,7 @@ namespace minorlife
             return bspTree;
         }
 
-        private static List<Rect> DiscardExceptLeafNodes(List<Rect> bspTree, int treeLevel)
+        private static List<Rect> GetLeafNodes(List<Rect> bspTree, int treeLevel)
         {
             int startIndexOfLeafNodeStart = (int)MathF.Pow(2.0f, treeLevel - 1);
             int countOfLeafNodes = startIndexOfLeafNodeStart;//같다

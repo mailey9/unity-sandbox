@@ -7,10 +7,10 @@ namespace minorlife
         public int LengthRow { get { return graphMatrix.GetLength(0); } }
         public int LengthColumn { get { return graphMatrix.GetLength(0); } }
 
-        public UInt64[]  lookupTable = null;
+        public ulong[]  lookupTable = null;
         public int[,] graphMatrix = null;
 
-        public bool GetShortestNode(UInt64 nodeFrom, out UInt64? nodeTo, out int? cost)
+        public bool GetShortestNode(ulong nodeFrom, out ulong? nodeTo, out int? cost)
         {
             int indexFrom = GetIndexOf(nodeFrom);
             int indexTo = -1;
@@ -41,11 +41,11 @@ namespace minorlife
             nodeTo = null;
             return false;
         }
-        public bool HasPath(UInt64 nodeA, UInt64 nodeB)
+        public bool HasPath(ulong nodeA, ulong nodeB)
         {
             return GetCost(nodeA, nodeB) == 0 ? false : true;
         }
-        public int GetCost(UInt64 nodeA, UInt64 nodeB)
+        public int GetCost(ulong nodeA, ulong nodeB)
         {
             int indexA = GetIndexOf(nodeA);
             int indexB = GetIndexOf(nodeB);
@@ -67,11 +67,11 @@ namespace minorlife
 
             return false;
         }
-        public int GetIndexOf(UInt64 id)
+        public int GetIndexOf(ulong id)
         {
             return Array.BinarySearch(lookupTable, id);
         }
-        public UInt64 GetNodeIdOf(int index)
+        public ulong GetNodeIdOf(int index)
         {
             return lookupTable[index];
         }

@@ -4,11 +4,11 @@ namespace minorlife
 {
     public class ManhattanEdge : IEquatable<ManhattanEdge>
     {
-        public UInt64 NodeA { get; private set; }
-        public UInt64 NodeB { get; private set; }
+        public ulong NodeA { get; private set; }
+        public ulong NodeB { get; private set; }
         public int ManhattanDistance { get; private set; }
 
-        public ManhattanEdge(UInt64 a, UInt64 b, int d)
+        public ManhattanEdge(ulong a, ulong b, int d)
         {
             NodeA = a;
             NodeB = b;

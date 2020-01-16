@@ -5,18 +5,22 @@ namespace minorlife
 {
     public class Map
     {
-        public enum Tile
+        //TODO(용택): (eTile) BitMask 또는 Weight 용 값 지정을 고려한다.
+        public enum eTile
         {
-            Empty   = 0,
-            Room    = 1,
-            RoomWall= 2,
-            RoomDoor= 3,
-            Corridor= 4
+            DEBUG           = -1,
+
+            Empty           = 0,
+            Room            = 1,
+            RoomWall        = 2,
+            RoomDoor        = 3,
+            Corridor        = 4,
+            CorridorWall    = 5,
         }
 
         public struct GeneratedMap
         {
-            public Tile[,]         tileMap;
+            public eTile[,]         tileMap;
             public List<Room>      rooms;
             public List<Corridor>  corridors;
             public GraphMatrix     completeMatrix;
@@ -46,11 +50,13 @@ namespace minorlife
                 {
                     switch (MapData.tileMap[r,c])
                     {
-                        case Tile.Empty:    stringBuilder.Append( "." ); break;
-                        case Tile.Room:     stringBuilder.Append( " " ); break;
-                        case Tile.RoomWall: stringBuilder.Append( "X" ); break;
-                        case Tile.RoomDoor: stringBuilder.Append( "d" ); break;
-                        case Tile.Corridor: stringBuilder.Append( "_" ); break;
+                        case eTile.DEBUG:       stringBuilder.Append( "DB" ); break;
+                        case eTile.Empty:       stringBuilder.Append( ". " ); break;
+                        case eTile.Room:        stringBuilder.Append( "  " ); break;
+                        case eTile.RoomWall:    stringBuilder.Append( "XX" ); break;
+                        case eTile.RoomDoor:    stringBuilder.Append( "d " ); break;
+                        case eTile.Corridor:    stringBuilder.Append( "_ " ); break;
+                        case eTile.CorridorWall:stringBuilder.Append( "% " ); break;
                     }
                 }
                 stringBuilder.Append("\n");

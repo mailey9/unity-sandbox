@@ -13,6 +13,12 @@ namespace minorlife
             this.x = x;
             this.y = y;
         }
+        public Point(Point other)
+        {
+            this.x = other.x;
+            this.y = other.y;
+        }
+
         public static Point operator+(Point a, Point b)
         {
             return new Point(a.x + b.x, a.y + b.y);
@@ -54,7 +60,7 @@ namespace minorlife
         }
         public override string ToString()
         {
-            return "x:" + x + ", c:" + y;
+            return "x:" + x + ", y:" + y;
         }
         public int Compare(Point a, Point b)
         {

@@ -6,11 +6,12 @@ namespace minorlife
     public partial class Room : IEquatable<Room>
     {
         public int RectCount { get { return _rects.Count; } }
-        public UInt64 Id { get; private set; }
+        public ulong Id { get; private set; }
 
-        private static UInt64 _id = 0;
+        private static ulong _id = 0;
         private List<Rect> _rects = null;
 
+        public int TEST_numDoor = 0;
         public Room(int capacity = 0)
         {
             Id = _id++;
@@ -31,12 +32,25 @@ namespace minorlife
         {
             return _rects[index];
         }
-
+        public IReadOnlyList<Rect> GetRects()
+        {
+            return _rects.AsReadOnly();
+        }
+        
         public bool Contains(int x, int y)
         {
             foreach (var rect in _rects)
             {
                 if (rect.Contains(x, y) == true)
+                    return true;
+            }
+            return false;
+        }
+        public bool Contains(Point point)
+        {
+            foreach (var rect in _rects)
+            {
+                if (rect.Contains(point.x, point.y) == true)
                     return true;
             }
             return false;
@@ -56,7 +70,7 @@ namespace minorlife
             return false;
         }
 
-        public static Room FindRoom(List<Room> rooms, UInt64 id)
+        public static Room FindRoom(List<Room> rooms, ulong id)
         {
             //NOTE(용택): (FindRoom) LinearSearch
             Room found = null;
@@ -167,6 +181,6 @@ namespace minorlife
         
         //  HullPoints 중 상하 - 좌우 로 샘플링해본다.
         //  pos = w/2; neg = -1 * (w-pos-1);    //좌우
-        //public bool CalculateDoorCandidates(Map.Tile[,] tileMap, int reservedBreadth, out List<Point> columnCandidates, out List<Point> rowCandidates)
+        //public bool CalculateDoorCandidates(Map.eTile[,] tileMap, int reservedBreadth, out List<Point> columnCandidates, out List<Point> rowCandidates)
     }
 }
